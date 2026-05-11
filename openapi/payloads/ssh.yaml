@@ -65,28 +65,43 @@ components:
     MailboxSshAuthResponsePayloadV1:
       title: MailboxSshAuthResponsePayloadV1
       description: >-
-        Response payload for the `ssh_auth` envelope type. Exactly one of
-        `signature` (success) or `error_code` (failure) MUST be present.
+        Response payload for the `ssh_auth` envelope type. Discriminated as
+        a success / failure pair. Decoders pick `MailboxSshAuthResponseSuccessV1`
+        if `signature` is present and `MailboxSshAuthResponseFailureV1` if
+        `error_code` is present.
+      oneOf:
+        - $ref: '#/components/schemas/MailboxSshAuthResponseSuccessV1'
+        - $ref: '#/components/schemas/MailboxSshAuthResponseFailureV1'
+
+    MailboxSshAuthResponseSuccessV1:
+      title: MailboxSshAuthResponseSuccessV1
+      description: Success branch of `MailboxSshAuthResponsePayloadV1`.
       type: object
       additionalProperties: false
+      required: [signature]
       properties:
         signature:
           type: string
           format: byte
           description: >-
             RFC 4648 standard base64 with `=` padding for the raw SSH
-            signature blob (no SSH-wire framing). Present on success.
+            signature blob (no SSH-wire framing).
+        approval_proof:
+          $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+
+    MailboxSshAuthResponseFailureV1:
+      title: MailboxSshAuthResponseFailureV1
+      description: Failure branch of `MailboxSshAuthResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required: [error_code]
+      properties:
         error_code:
           $ref: 'common.yaml#/components/schemas/SigningErrorCode'
         error_message:
           type: string
           description: Human-readable error message.
           example: User rejected the request
-        approval_proof:
-          $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
-      oneOf:
-        - required: [signature]
-        - required: [error_code]
 
     # ---- ssh_sign ---------------------------------------------------------
 
@@ -140,25 +155,38 @@ components:
     MailboxSshSignResponsePayloadV1:
       title: MailboxSshSignResponsePayloadV1
       description: >-
-        Response payload for the `ssh_sign` envelope type. Exactly one of
-        `signature` (success) or `error_code` (failure) MUST be present.
+        Response payload for the `ssh_sign` envelope type. Discriminated as
+        a success / failure pair.
+      oneOf:
+        - $ref: '#/components/schemas/MailboxSshSignResponseSuccessV1'
+        - $ref: '#/components/schemas/MailboxSshSignResponseFailureV1'
+
+    MailboxSshSignResponseSuccessV1:
+      title: MailboxSshSignResponseSuccessV1
+      description: Success branch of `MailboxSshSignResponsePayloadV1`.
       type: object
       additionalProperties: false
+      required: [signature]
       properties:
         signature:
           type: string
           format: byte
           description: >-
             RFC 4648 standard base64 with `=` padding for the raw SSH
-            signature blob (no SSH-wire framing). Present on success.
+            signature blob (no SSH-wire framing).
+        approval_proof:
+          $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+
+    MailboxSshSignResponseFailureV1:
+      title: MailboxSshSignResponseFailureV1
+      description: Failure branch of `MailboxSshSignResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required: [error_code]
+      properties:
         error_code:
           $ref: 'common.yaml#/components/schemas/SigningErrorCode'
         error_message:
           type: string
           description: Human-readable error message.
           example: User rejected the request
-        approval_proof:
-          $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
-      oneOf:
-        - required: [signature]
-        - required: [error_code]

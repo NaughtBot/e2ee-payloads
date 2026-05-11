@@ -1,0 +1,7 @@
+# swift-openapi-generator configuration consumed by the repository
+# Makefile's `generate-swift` step. We only emit the schema types — there
+# is no client / server surface in this repo because consumers carry the
+# transport (HPKE) themselves.
+generate:
+  - types
+accessModifier: public

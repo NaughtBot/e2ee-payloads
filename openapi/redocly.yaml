@@ -2,6 +2,12 @@ extends:
   - recommended
 
 apis:
+  # Aggregator entry point — `make bundle` reads this and emits
+  # `openapi/bundled/payloads.yaml` for the Go/Swift/TS generators.
+  payloads:
+    root: ./payloads.yaml
+  # Per-surface lint roots so a partial edit fails fast if any single
+  # schema file goes stale.
   envelope:
     root: ./envelope.yaml
   payloads-common:

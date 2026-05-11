@@ -1,0 +1,124 @@
+openapi: 3.0.3
+info:
+  title: NaughtBot e2ee mailbox payloads (bundle root)
+  description: >-
+    Aggregator entry point that re-exports every component schema authored
+    under `openapi/`. The Makefile's `make bundle` target feeds this file to
+    Redocly to produce `openapi/bundled/payloads.yaml`, a single
+    self-contained document that the Go / Swift / TypeScript generators
+    consume. Hand-edited only when adding a new payload surface — bump the
+    `components.schemas` table to re-export the new schemas.
+  version: 0.1.0
+  license:
+    name: MIT
+paths: {}
+components:
+  schemas:
+    MailboxEnvelopeV1:
+      $ref: 'envelope.yaml#/components/schemas/MailboxEnvelopeV1'
+    MailboxEnvelopeType:
+      $ref: 'envelope.yaml#/components/schemas/MailboxEnvelopeType'
+
+    # ---- payloads/common.yaml ---------------------------------------------
+    ApprovalChallenge:
+      $ref: 'payloads/common.yaml#/components/schemas/ApprovalChallenge'
+    ApprovalProofStatement:
+      $ref: 'payloads/common.yaml#/components/schemas/ApprovalProofStatement'
+    ApprovalAttestationV1:
+      $ref: 'payloads/common.yaml#/components/schemas/ApprovalAttestationV1'
+    ApprovalAttestedKeyProof:
+      $ref: 'payloads/common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+    AttestationSecurityType:
+      $ref: 'payloads/common.yaml#/components/schemas/AttestationSecurityType'
+    KeyMetadataAttestation:
+      $ref: 'payloads/common.yaml#/components/schemas/KeyMetadataAttestation'
+    SigningErrorCode:
+      $ref: 'payloads/common.yaml#/components/schemas/SigningErrorCode'
+    KeyPurpose:
+      $ref: 'payloads/common.yaml#/components/schemas/KeyPurpose'
+    DisplayField:
+      $ref: 'payloads/common.yaml#/components/schemas/DisplayField'
+    DisplaySchema:
+      $ref: 'payloads/common.yaml#/components/schemas/DisplaySchema'
+    ProcessEntry:
+      $ref: 'payloads/common.yaml#/components/schemas/ProcessEntry'
+    SourceInfo:
+      $ref: 'payloads/common.yaml#/components/schemas/SourceInfo'
+
+    # ---- payloads/ssh.yaml ------------------------------------------------
+    MailboxSshAuthRequestPayloadV1:
+      $ref: 'payloads/ssh.yaml#/components/schemas/MailboxSshAuthRequestPayloadV1'
+    MailboxSshAuthResponsePayloadV1:
+      $ref: 'payloads/ssh.yaml#/components/schemas/MailboxSshAuthResponsePayloadV1'
+    MailboxSshAuthResponseSuccessV1:
+      $ref: 'payloads/ssh.yaml#/components/schemas/MailboxSshAuthResponseSuccessV1'
+    MailboxSshAuthResponseFailureV1:
+      $ref: 'payloads/ssh.yaml#/components/schemas/MailboxSshAuthResponseFailureV1'
+    MailboxSshSignRequestPayloadV1:
+      $ref: 'payloads/ssh.yaml#/components/schemas/MailboxSshSignRequestPayloadV1'
+    MailboxSshSignResponsePayloadV1:
+      $ref: 'payloads/ssh.yaml#/components/schemas/MailboxSshSignResponsePayloadV1'
+    MailboxSshSignResponseSuccessV1:
+      $ref: 'payloads/ssh.yaml#/components/schemas/MailboxSshSignResponseSuccessV1'
+    MailboxSshSignResponseFailureV1:
+      $ref: 'payloads/ssh.yaml#/components/schemas/MailboxSshSignResponseFailureV1'
+
+    # ---- payloads/gpg.yaml ------------------------------------------------
+    MailboxGpgSignRequestPayloadV1:
+      $ref: 'payloads/gpg.yaml#/components/schemas/MailboxGpgSignRequestPayloadV1'
+    MailboxGpgSignResponsePayloadV1:
+      $ref: 'payloads/gpg.yaml#/components/schemas/MailboxGpgSignResponsePayloadV1'
+    MailboxGpgSignResponseSuccessV1:
+      $ref: 'payloads/gpg.yaml#/components/schemas/MailboxGpgSignResponseSuccessV1'
+    MailboxGpgSignResponseFailureV1:
+      $ref: 'payloads/gpg.yaml#/components/schemas/MailboxGpgSignResponseFailureV1'
+    MailboxGpgDecryptRequestPayloadV1:
+      $ref: 'payloads/gpg.yaml#/components/schemas/MailboxGpgDecryptRequestPayloadV1'
+    MailboxGpgDecryptResponsePayloadV1:
+      $ref: 'payloads/gpg.yaml#/components/schemas/MailboxGpgDecryptResponsePayloadV1'
+    MailboxGpgDecryptResponseSuccessV1:
+      $ref: 'payloads/gpg.yaml#/components/schemas/MailboxGpgDecryptResponseSuccessV1'
+    MailboxGpgDecryptResponseFailureV1:
+      $ref: 'payloads/gpg.yaml#/components/schemas/MailboxGpgDecryptResponseFailureV1'
+    PkeskData:
+      $ref: 'payloads/gpg.yaml#/components/schemas/PkeskData'
+
+    # ---- payloads/age.yaml ------------------------------------------------
+    MailboxAgeUnwrapRequestPayloadV1:
+      $ref: 'payloads/age.yaml#/components/schemas/MailboxAgeUnwrapRequestPayloadV1'
+    MailboxAgeUnwrapResponsePayloadV1:
+      $ref: 'payloads/age.yaml#/components/schemas/MailboxAgeUnwrapResponsePayloadV1'
+    MailboxAgeUnwrapResponseSuccessV1:
+      $ref: 'payloads/age.yaml#/components/schemas/MailboxAgeUnwrapResponseSuccessV1'
+    MailboxAgeUnwrapResponseFailureV1:
+      $ref: 'payloads/age.yaml#/components/schemas/MailboxAgeUnwrapResponseFailureV1'
+
+    # ---- payloads/pkcs11.yaml --------------------------------------------
+    MailboxPkcs11SignRequestPayloadV1:
+      $ref: 'payloads/pkcs11.yaml#/components/schemas/MailboxPkcs11SignRequestPayloadV1'
+    MailboxPkcs11SignResponsePayloadV1:
+      $ref: 'payloads/pkcs11.yaml#/components/schemas/MailboxPkcs11SignResponsePayloadV1'
+    MailboxPkcs11SignResponseSuccessV1:
+      $ref: 'payloads/pkcs11.yaml#/components/schemas/MailboxPkcs11SignResponseSuccessV1'
+    MailboxPkcs11SignResponseFailureV1:
+      $ref: 'payloads/pkcs11.yaml#/components/schemas/MailboxPkcs11SignResponseFailureV1'
+    MailboxPkcs11DeriveRequestPayloadV1:
+      $ref: 'payloads/pkcs11.yaml#/components/schemas/MailboxPkcs11DeriveRequestPayloadV1'
+    MailboxPkcs11DeriveResponsePayloadV1:
+      $ref: 'payloads/pkcs11.yaml#/components/schemas/MailboxPkcs11DeriveResponsePayloadV1'
+    MailboxPkcs11DeriveResponseSuccessV1:
+      $ref: 'payloads/pkcs11.yaml#/components/schemas/MailboxPkcs11DeriveResponseSuccessV1'
+    MailboxPkcs11DeriveResponseFailureV1:
+      $ref: 'payloads/pkcs11.yaml#/components/schemas/MailboxPkcs11DeriveResponseFailureV1'
+    Pkcs11DeriveKdfParams:
+      $ref: 'payloads/pkcs11.yaml#/components/schemas/Pkcs11DeriveKdfParams'
+
+    # ---- payloads/enroll.yaml --------------------------------------------
+    MailboxEnrollRequestPayloadV1:
+      $ref: 'payloads/enroll.yaml#/components/schemas/MailboxEnrollRequestPayloadV1'
+    MailboxEnrollResponsePayloadV1:
+      $ref: 'payloads/enroll.yaml#/components/schemas/MailboxEnrollResponsePayloadV1'
+    MailboxEnrollResponseApprovedV1:
+      $ref: 'payloads/enroll.yaml#/components/schemas/MailboxEnrollResponseApprovedV1'
+    MailboxEnrollResponseRejectedV1:
+      $ref: 'payloads/enroll.yaml#/components/schemas/MailboxEnrollResponseRejectedV1'
