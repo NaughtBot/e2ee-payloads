@@ -1,0 +1,44 @@
+extends:
+  - recommended
+
+apis:
+  envelope:
+    root: ./envelope.yaml
+  payloads-common:
+    root: ./payloads/common.yaml
+  payloads-ssh:
+    root: ./payloads/ssh.yaml
+  payloads-gpg:
+    root: ./payloads/gpg.yaml
+  payloads-age:
+    root: ./payloads/age.yaml
+  payloads-pkcs11:
+    root: ./payloads/pkcs11.yaml
+  payloads-enroll:
+    root: ./payloads/enroll.yaml
+
+rules:
+  # These specs declare no operations / paths — they exist purely to publish
+  # JSON schemas for the per-`type` mailbox payloads.
+  no-server-trailing-slash: warn
+  operation-operationId: off
+  operation-description: off
+  operation-2xx-response: off
+  operation-4xx-response: off
+  operation-summary: off
+  no-empty-servers: off
+  # These schema-only specs publish reusable component schemas; no operation
+  # consumes them in this repo (consumers $ref via the package bindings).
+  no-unused-components: off
+  # info-license-strict requires `url` or SPDX `identifier` on every license;
+  # the repository LICENSE file is the source of truth and `name: MIT` is
+  # sufficient for the lint gate.
+  info-license-strict: off
+  rule/openapi-version-locked:
+    subject:
+      type: Root
+      property: openapi
+    message: 'Specs must declare openapi: 3.0.3 (oapi-codegen issue #373 — flip back when 3.1 lands or generator changes)'
+    severity: error
+    assertions:
+      const: 3.0.3

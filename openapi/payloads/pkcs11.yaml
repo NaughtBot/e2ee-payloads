@@ -1,0 +1,163 @@
+openapi: 3.0.3
+info:
+  title: NaughtBot mailbox PKCS#11 payloads
+  description: >-
+    Request/response payload schemas for the `pkcs11_sign` and
+    `pkcs11_derive` mailbox envelope types. These replace the legacy `custom`
+    and `ecdh_derive` envelope types from the previous monorepo. The only
+    producer of either was the PKCS#11 provider in the legacy CLI, so the
+    rename is a full break with no backwards compatibility per the workspace
+    rule.
+  version: 0.1.0
+  license:
+    name: MIT
+paths: {}
+components:
+  schemas:
+    # ---- pkcs11_sign ------------------------------------------------------
+
+    MailboxPkcs11SignRequestPayloadV1:
+      title: MailboxPkcs11SignRequestPayloadV1
+      description: >-
+        Request payload for the `pkcs11_sign` envelope type. The approver
+        computes the SHA-256 digest of `raw_data` and signs it with the
+        on-device key selected by `device_key_id`.
+      type: object
+      additionalProperties: false
+      required: [raw_data, device_key_id]
+      properties:
+        raw_data:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the raw data to
+            sign (preimage). The approver computes the SHA-256 digest and
+            signs it.
+          example: cGtjczExIGRhdGE=
+        device_key_id:
+          type: string
+          description: >-
+            Hex-encoded public key selecting which on-device key the approver
+            should use for signing.
+        display:
+          $ref: 'common.yaml#/components/schemas/DisplaySchema'
+        approval_challenge:
+          $ref: 'common.yaml#/components/schemas/ApprovalChallenge'
+        source_info:
+          $ref: 'common.yaml#/components/schemas/SourceInfo'
+
+    MailboxPkcs11SignResponsePayloadV1:
+      title: MailboxPkcs11SignResponsePayloadV1
+      description: >-
+        Response payload for the `pkcs11_sign` envelope type. Exactly one of
+        `signature` (success) or `error_code` (failure) MUST be present.
+      type: object
+      additionalProperties: false
+      properties:
+        signature:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the raw signature
+            bytes (no PKCS#1 framing). Present on success.
+        error_code:
+          $ref: 'common.yaml#/components/schemas/SigningErrorCode'
+        error_message:
+          type: string
+          description: Human-readable error message.
+          example: User rejected the request
+        approval_proof:
+          $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+      oneOf:
+        - required: [signature]
+        - required: [error_code]
+
+    # ---- pkcs11_derive ----------------------------------------------------
+
+    MailboxPkcs11DeriveRequestPayloadV1:
+      title: MailboxPkcs11DeriveRequestPayloadV1
+      description: >-
+        Request payload for the `pkcs11_derive` envelope type. The approver
+        runs ECDH between the on-device private key selected by
+        `device_key_id` and the peer public key, optionally feeding the
+        shared secret through a KDF.
+      type: object
+      additionalProperties: false
+      required: [peer_public_hex, device_key_id]
+      properties:
+        peer_public_hex:
+          type: string
+          description: >-
+            Lowercase hex-encoded peer public key for ECDH (66 hex chars for
+            P-256 33-byte compressed key).
+          pattern: '^(02|03)[0-9a-f]{64}$'
+          example: "02a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+        device_key_id:
+          type: string
+          description: >-
+            Hex-encoded public key selecting which on-device key the approver
+            should use for ECDH.
+        kdf:
+          $ref: '#/components/schemas/Pkcs11DeriveKdfParams'
+        approval_challenge:
+          $ref: 'common.yaml#/components/schemas/ApprovalChallenge'
+        display:
+          $ref: 'common.yaml#/components/schemas/DisplaySchema'
+        source_info:
+          $ref: 'common.yaml#/components/schemas/SourceInfo'
+
+    MailboxPkcs11DeriveResponsePayloadV1:
+      title: MailboxPkcs11DeriveResponsePayloadV1
+      description: >-
+        Response payload for the `pkcs11_derive` envelope type. Exactly one
+        of `shared_secret` (success) or `error_code` (failure) MUST be
+        present.
+      type: object
+      additionalProperties: false
+      properties:
+        shared_secret:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the derived shared
+            secret (post-KDF if `kdf` was supplied, otherwise raw ECDH X
+            output). Present on success.
+          example: c2hhcmVkIHNlY3JldA==
+        error_code:
+          $ref: 'common.yaml#/components/schemas/SigningErrorCode'
+        error_message:
+          type: string
+          description: Human-readable error message.
+          example: User rejected the request
+        approval_proof:
+          $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+      oneOf:
+        - required: [shared_secret]
+        - required: [error_code]
+
+    Pkcs11DeriveKdfParams:
+      title: Pkcs11DeriveKdfParams
+      description: >-
+        Optional key derivation parameters applied to the ECDH shared secret.
+      type: object
+      additionalProperties: false
+      required: [algorithm]
+      properties:
+        algorithm:
+          type: string
+          description: >-
+            KDF algorithm name. Approvers MUST reject unknown algorithms.
+          example: HKDF-SHA256
+        key_length:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 64
+          description: Desired output key length in bytes.
+          example: 32
+        info:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the optional KDF
+            `info` parameter.

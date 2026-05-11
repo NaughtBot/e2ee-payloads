@@ -1,0 +1,161 @@
+openapi: 3.0.3
+info:
+  title: NaughtBot mailbox enrollment payloads
+  description: >-
+    Request/response payload schemas for the `enroll` mailbox envelope type.
+    The producer encodes a `MailboxEnrollRequestPayloadV1` as the envelope
+    `payload`; the approver returns the matching response payload, including
+    the freshly minted public key material and (where applicable) the
+    KeyMetadataAttestation proof that the key was created on attested
+    hardware.
+  version: 0.1.0
+  license:
+    name: MIT
+paths: {}
+components:
+  schemas:
+    MailboxEnrollRequestPayloadV1:
+      title: MailboxEnrollRequestPayloadV1
+      description: >-
+        Request payload for the `enroll` envelope type. The approver creates
+        a new key for the requested `purpose` and returns its public material.
+      type: object
+      additionalProperties: false
+      required: [purpose]
+      properties:
+        purpose:
+          $ref: 'common.yaml#/components/schemas/KeyPurpose'
+        label:
+          type: string
+          description: Human-readable label for the new key.
+          example: Work Laptop SSH Key
+        algorithm:
+          type: string
+          description: >-
+            Key algorithm to use. Approver MUST reject unknown algorithms.
+          example: ed25519
+        include_certification:
+          type: boolean
+          description: >-
+            Include a self-certification signature for GPG export. Ignored
+            for non-GPG purposes.
+          default: false
+        approval_challenge:
+          $ref: 'common.yaml#/components/schemas/ApprovalChallenge'
+        display:
+          $ref: 'common.yaml#/components/schemas/DisplaySchema'
+        source_info:
+          $ref: 'common.yaml#/components/schemas/SourceInfo'
+
+    MailboxEnrollResponsePayloadV1:
+      title: MailboxEnrollResponsePayloadV1
+      description: >-
+        Response payload for the `enroll` envelope type. Discriminated on
+        `status`: `approved` requires the full key material set; `rejected`
+        requires `error_code`.
+      oneOf:
+        - $ref: '#/components/schemas/MailboxEnrollResponseApprovedV1'
+        - $ref: '#/components/schemas/MailboxEnrollResponseRejectedV1'
+      discriminator:
+        propertyName: status
+        mapping:
+          approved: '#/components/schemas/MailboxEnrollResponseApprovedV1'
+          rejected: '#/components/schemas/MailboxEnrollResponseRejectedV1'
+
+    MailboxEnrollResponseApprovedV1:
+      title: MailboxEnrollResponseApprovedV1
+      description: >-
+        Approved branch of `MailboxEnrollResponsePayloadV1`. Carries the
+        freshly minted public key material so the requester can refer to the
+        new key in subsequent signing / decryption requests.
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - id
+        - public_key_hex
+        - device_key_id
+        - algorithm
+      properties:
+        status:
+          type: string
+          enum: [approved]
+          description: Enrollment outcome discriminator (`approved`).
+          example: approved
+        id:
+          type: string
+          description: >-
+            New key identifier. UUID for GPG keys; format defined by the
+            algorithm for other purposes.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        public_key_hex:
+          type: string
+          description: >-
+            Lowercase hex-encoded public key. 66 hex chars for P-256 33-byte
+            compressed key, or 64 hex chars for Ed25519 32-byte key.
+          pattern: '^[0-9a-f]{64}([0-9a-f]{2})?$'
+        device_key_id:
+          type: string
+          description: >-
+            Device-side key identifier (e.g. iOS Secure Enclave handle) the
+            requester can use to refer to the new key in subsequent requests.
+        algorithm:
+          type: string
+          description: Key algorithm used.
+          example: ed25519
+        fingerprint:
+          type: string
+          description: GPG fingerprint for GPG keys (40 hex chars).
+          pattern: '^[0-9A-F]{40}$'
+        key_creation_timestamp:
+          type: integer
+          format: int64
+          description: Unix timestamp (seconds) when the key was created.
+          example: 1705320000
+        user_id_signature:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the GPG
+            self-certification signature.
+        subkey_signature:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the GPG subkey
+            binding signature.
+        encryption_public_key_hex:
+          type: string
+          description: >-
+            Lowercase hex-encoded ECDH encryption subkey public key (66 hex
+            chars for P-256 33-byte compressed key).
+          pattern: '^(02|03)[0-9a-f]{64}$'
+        encryption_fingerprint:
+          type: string
+          description: 40-character hex fingerprint of the ECDH encryption subkey.
+          pattern: '^[0-9A-F]{40}$'
+        attestation:
+          $ref: 'common.yaml#/components/schemas/KeyMetadataAttestation'
+        approval_proof:
+          $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+
+    MailboxEnrollResponseRejectedV1:
+      title: MailboxEnrollResponseRejectedV1
+      description: >-
+        Rejected branch of `MailboxEnrollResponsePayloadV1`. Carries the
+        signing error code (and optional human-readable message).
+      type: object
+      additionalProperties: false
+      required: [status, error_code]
+      properties:
+        status:
+          type: string
+          enum: [rejected]
+          description: Enrollment outcome discriminator (`rejected`).
+          example: rejected
+        error_code:
+          $ref: 'common.yaml#/components/schemas/SigningErrorCode'
+        error_message:
+          type: string
+          description: Human-readable error message.
+          example: User rejected the enrollment

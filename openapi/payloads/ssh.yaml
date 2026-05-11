@@ -1,0 +1,164 @@
+openapi: 3.0.3
+info:
+  title: NaughtBot mailbox SSH payloads
+  description: >-
+    Request/response payload schemas for the `ssh_auth` and `ssh_sign`
+    mailbox envelope types. The producer encodes a `MailboxSshAuthRequestPayloadV1`
+    or `MailboxSshSignRequestPayloadV1` as the envelope `payload` and ships it
+    via HPKE plaintext. The approver returns the matching response payload
+    inside the encrypted response envelope.
+  version: 0.1.0
+  license:
+    name: MIT
+paths: {}
+components:
+  schemas:
+    # ---- ssh_auth ---------------------------------------------------------
+
+    MailboxSshAuthRequestPayloadV1:
+      title: MailboxSshAuthRequestPayloadV1
+      description: >-
+        Request payload for the `ssh_auth` envelope type. The approver signs
+        an SSH user-authentication challenge constructed from `raw_data`,
+        using the on-device key selected by `device_key_id`.
+      type: object
+      additionalProperties: false
+      required: [raw_data, device_key_id]
+      properties:
+        raw_data:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the raw SSH
+            challenge preimage. The approver builds the canonical SSH
+            signature input from this preimage.
+          example: c3NoIGNoYWxsZW5nZQ==
+        key_id:
+          type: string
+          description: Identifier of the key to sign with.
+          example: key_abc123
+        application:
+          type: string
+          description: SSH application identifier (e.g. `ssh:`).
+          example: "ssh:"
+        flags:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 255
+          description: >-
+            SSH SK flags bitmask. Default `0x01` requires user presence.
+          default: 1
+          example: 1
+        device_key_id:
+          type: string
+          description: >-
+            Device-side key identifier (e.g. iOS Secure Enclave handle) used
+            to select among enrolled signing keys on the approver.
+        approval_challenge:
+          $ref: 'common.yaml#/components/schemas/ApprovalChallenge'
+        display:
+          $ref: 'common.yaml#/components/schemas/DisplaySchema'
+        source_info:
+          $ref: 'common.yaml#/components/schemas/SourceInfo'
+
+    MailboxSshAuthResponsePayloadV1:
+      title: MailboxSshAuthResponsePayloadV1
+      description: >-
+        Response payload for the `ssh_auth` envelope type. Exactly one of
+        `signature` (success) or `error_code` (failure) MUST be present.
+      type: object
+      additionalProperties: false
+      properties:
+        signature:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the raw SSH
+            signature blob (no SSH-wire framing). Present on success.
+        error_code:
+          $ref: 'common.yaml#/components/schemas/SigningErrorCode'
+        error_message:
+          type: string
+          description: Human-readable error message.
+          example: User rejected the request
+        approval_proof:
+          $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+      oneOf:
+        - required: [signature]
+        - required: [error_code]
+
+    # ---- ssh_sign ---------------------------------------------------------
+
+    MailboxSshSignRequestPayloadV1:
+      title: MailboxSshSignRequestPayloadV1
+      description: >-
+        Request payload for the `ssh_sign` envelope type. The approver signs
+        an SSH signature input derived from `raw_data` (e.g. `git commit -S`
+        SSH signing), using the on-device key selected by `device_key_id`.
+      type: object
+      additionalProperties: false
+      required: [raw_data, device_key_id]
+      properties:
+        raw_data:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the raw data to
+            sign (preimage). The approver builds the canonical SSH signature
+            input from this preimage.
+          example: ZGF0YSB0byBzaWdu
+        key_id:
+          type: string
+          description: Identifier of the key to sign with.
+          example: key_abc123
+        application:
+          type: string
+          description: SSH application identifier (e.g. `ssh:`).
+          example: "ssh:"
+        flags:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 255
+          description: >-
+            SSH SK flags bitmask. Default `0x01` requires user presence.
+          default: 1
+          example: 1
+        device_key_id:
+          type: string
+          description: >-
+            Device-side key identifier (e.g. iOS Secure Enclave handle) used
+            to select among enrolled signing keys on the approver.
+        approval_challenge:
+          $ref: 'common.yaml#/components/schemas/ApprovalChallenge'
+        display:
+          $ref: 'common.yaml#/components/schemas/DisplaySchema'
+        source_info:
+          $ref: 'common.yaml#/components/schemas/SourceInfo'
+
+    MailboxSshSignResponsePayloadV1:
+      title: MailboxSshSignResponsePayloadV1
+      description: >-
+        Response payload for the `ssh_sign` envelope type. Exactly one of
+        `signature` (success) or `error_code` (failure) MUST be present.
+      type: object
+      additionalProperties: false
+      properties:
+        signature:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the raw SSH
+            signature blob (no SSH-wire framing). Present on success.
+        error_code:
+          $ref: 'common.yaml#/components/schemas/SigningErrorCode'
+        error_message:
+          type: string
+          description: Human-readable error message.
+          example: User rejected the request
+        approval_proof:
+          $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+      oneOf:
+        - required: [signature]
+        - required: [error_code]

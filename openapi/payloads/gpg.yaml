@@ -1,0 +1,196 @@
+openapi: 3.0.3
+info:
+  title: NaughtBot mailbox GPG payloads
+  description: >-
+    Request/response payload schemas for the `gpg_sign` and `gpg_decrypt`
+    mailbox envelope types. The producer encodes a `MailboxGpg*RequestPayloadV1`
+    as the envelope `payload`; the approver returns the matching response
+    payload inside the encrypted response envelope.
+  version: 0.1.0
+  license:
+    name: MIT
+paths: {}
+components:
+  schemas:
+    # ---- gpg_sign ---------------------------------------------------------
+
+    MailboxGpgSignRequestPayloadV1:
+      title: MailboxGpgSignRequestPayloadV1
+      description: >-
+        Request payload for the `gpg_sign` envelope type. The approver builds
+        the OpenPGP hash input from `raw_data` and signs the resulting digest
+        with the primary GPG signing key selected by `device_key_id`.
+      type: object
+      additionalProperties: false
+      required: [raw_data, device_key_id]
+      properties:
+        raw_data:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the raw data to
+            sign (preimage). The approver builds the OpenPGP hash input from
+            this preimage and signs the resulting digest.
+          example: cmF3IGRhdGE=
+        device_key_id:
+          type: string
+          description: >-
+            Hex-encoded public key selecting which on-device GPG primary key
+            the approver should use for signing. The mailbox/poll path
+            requires this because the envelope does not otherwise carry a key
+            identifier.
+          example: "034dc708f0fda9462584485537d588657e68c808dae0edb8cc556459a7975229e8"
+        approval_challenge:
+          $ref: 'common.yaml#/components/schemas/ApprovalChallenge'
+        display:
+          $ref: 'common.yaml#/components/schemas/DisplaySchema'
+        source_info:
+          $ref: 'common.yaml#/components/schemas/SourceInfo'
+
+    MailboxGpgSignResponsePayloadV1:
+      title: MailboxGpgSignResponsePayloadV1
+      description: >-
+        Response payload for the `gpg_sign` envelope type. Exactly one of
+        `armored_signature` (success) or `error_code` (failure) MUST be
+        present.
+      type: object
+      additionalProperties: false
+      properties:
+        armored_signature:
+          type: string
+          description: ASCII-armored OpenPGP signature. Present on success.
+          example: '-----BEGIN PGP SIGNATURE-----...'
+        error_code:
+          $ref: 'common.yaml#/components/schemas/SigningErrorCode'
+        error_message:
+          type: string
+          description: Human-readable error message.
+          example: User rejected the request
+        approval_proof:
+          $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+      oneOf:
+        - required: [armored_signature]
+        - required: [error_code]
+
+    # ---- gpg_decrypt ------------------------------------------------------
+
+    MailboxGpgDecryptRequestPayloadV1:
+      title: MailboxGpgDecryptRequestPayloadV1
+      description: >-
+        Request payload for the `gpg_decrypt` envelope type. The approver
+        unwraps the OpenPGP Public Key Encrypted Session Key packet using the
+        encryption subkey selected by `device_key_id`.
+      type: object
+      additionalProperties: false
+      required: [encrypted_data, pkesk, device_key_id]
+      properties:
+        encrypted_data:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the encrypted data
+            to decrypt.
+          example: ZW5jcnlwdGVkIGRhdGE=
+        pkesk:
+          $ref: '#/components/schemas/PkeskData'
+        device_key_id:
+          type: string
+          description: >-
+            Hex-encoded public key selecting which on-device GPG encryption
+            subkey the approver should use for ECDH. The mailbox/poll path
+            requires this because the envelope does not otherwise carry a key
+            identifier.
+          example: "034dc708f0fda9462584485537d588657e68c808dae0edb8cc556459a7975229e8"
+        approval_challenge:
+          $ref: 'common.yaml#/components/schemas/ApprovalChallenge'
+        display:
+          $ref: 'common.yaml#/components/schemas/DisplaySchema'
+        source_info:
+          $ref: 'common.yaml#/components/schemas/SourceInfo'
+
+    MailboxGpgDecryptResponsePayloadV1:
+      title: MailboxGpgDecryptResponsePayloadV1
+      description: >-
+        Response payload for the `gpg_decrypt` envelope type. On success both
+        `session_key` and `algorithm` MUST be present together; on failure
+        `error_code` MUST be present. Exactly one of those two outcomes is
+        valid.
+      type: object
+      additionalProperties: false
+      properties:
+        session_key:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the unwrapped
+            session key. Present together with `algorithm` on success.
+          example: c2Vzc2lvbiBrZXk=
+        algorithm:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 255
+          description: >-
+            OpenPGP symmetric algorithm id (RFC 4880 §9.2). Present together
+            with `session_key` on success.
+          example: 9
+        error_code:
+          $ref: 'common.yaml#/components/schemas/SigningErrorCode'
+        error_message:
+          type: string
+          description: Human-readable error message.
+          example: User rejected the request
+        approval_proof:
+          $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+      oneOf:
+        - required: [session_key, algorithm]
+        - required: [error_code]
+
+    PkeskData:
+      title: PkeskData
+      description: OpenPGP Public Key Encrypted Session Key packet data.
+      type: object
+      additionalProperties: false
+      required:
+        - version
+        - key_id
+        - algorithm
+        - ephemeral_point
+        - wrapped_key
+      properties:
+        version:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 255
+          description: PKESK packet version (typically 3).
+          example: 3
+        key_id:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the 8-byte recipient
+            key id.
+          example: a2V5X2lkMTIz
+        algorithm:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 255
+          description: >-
+            OpenPGP public key algorithm (RFC 4880 §9.1). `18` is ECDH.
+          example: 18
+        ephemeral_point:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the ephemeral ECDH
+            public point (33 bytes compressed).
+          example: ZXBoZW1lcmFsX3BvaW50
+        wrapped_key:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the AES-wrapped
+            session key.
+          example: d3JhcHBlZF9rZXk=
