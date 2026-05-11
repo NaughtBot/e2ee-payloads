@@ -4,7 +4,12 @@
     // The smoke tests live next to the published sources; re-include
     // them so `tsc --noEmit` validates the type contract a regression
     // would otherwise erase under `node --test --experimental-strip-types`.
-    "noEmit": true
+    "noEmit": true,
+    // The smoke tests import the source via `./index.ts` (matches the
+    // node --test runner with --experimental-strip-types). Allow the
+    // .ts extension explicitly so the typecheck does not get tangled
+    // up with NodeNext's runtime-extension expectations.
+    "allowImportingTsExtensions": true
   },
   "include": ["src", "src/**/*.test.ts"],
   "exclude": ["dist", "node_modules"]

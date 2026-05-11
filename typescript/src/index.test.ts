@@ -8,7 +8,7 @@ import type {
   MailboxAgeUnwrapRequestPayloadV1,
   MailboxEnrollResponsePayloadV1,
   MailboxEnvelopeV1,
-  MailboxGpgDecryptResponsePayloadV1,
+  MailboxGpgDecryptResponseSuccessV1,
   MailboxSshSignRequestPayloadV1,
   MailboxSshSignResponsePayloadV1,
 } from "./index.ts";
@@ -75,18 +75,20 @@ describe("MailboxSshSignResponsePayloadV1", () => {
   });
 });
 
-describe("MailboxGpgDecryptResponsePayloadV1", () => {
+describe("MailboxGpgDecryptResponseSuccessV1", () => {
   it("requires both session_key and algorithm on success", () => {
-    // Compile-time check via the success branch type — partial success
-    // (just session_key) is now a type error.
-    const success = JSON.parse(
-      '{"session_key":"c2Vzc2lvbg==","algorithm":9}',
-    ) as MailboxGpgDecryptResponsePayloadV1;
-    if ("session_key" in success && success.session_key !== undefined) {
-      assert.equal(success.algorithm, 9);
-    } else {
-      assert.fail("expected success branch");
-    }
+    // Bind to the success branch directly so the compile-time check is
+    // strict: a regression that makes either field optional turns this
+    // into a `tsc` error rather than a silent runtime miss.
+    const success: MailboxGpgDecryptResponseSuccessV1 = {
+      session_key: "c2Vzc2lvbg==",
+      algorithm: 9,
+    };
+    const parsed = JSON.parse(
+      JSON.stringify(success),
+    ) as MailboxGpgDecryptResponseSuccessV1;
+    assert.equal(parsed.session_key, "c2Vzc2lvbg==");
+    assert.equal(parsed.algorithm, 9);
   });
 });
 

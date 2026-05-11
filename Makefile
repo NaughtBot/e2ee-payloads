@@ -177,7 +177,7 @@ generate-check: generate
 	    $(SWIFT_GEN_DIR) \
 	    $(TS_SRC_DIR) \
 	    2>/dev/null \
-	    | grep -vE '(^.. )go/[^/]+_test\.go$$|(^.. )typescript/src/[^/]+\.test\.ts$$|(^.. )go/go\.(mod|sum)$$' \
+	    | grep -vE '(^.. )go/[^/]+_test\.go$$|(^.. )typescript/src/[^/]+\.test\.ts$$' \
 	    || true); \
 	if [ -n "$$dirty" ]; then \
 	    echo "generate-check: generator output is stale or unexpected. Run 'make generate' and commit the result." >&2; \
