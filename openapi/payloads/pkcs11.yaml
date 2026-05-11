@@ -24,7 +24,7 @@ components:
         on-device key selected by `device_key_id`.
       type: object
       additionalProperties: false
-      required: [raw_data, display]
+      required: [raw_data, device_key_id]
       properties:
         raw_data:
           type: string
@@ -49,8 +49,8 @@ components:
     MailboxPkcs11SignResponsePayloadV1:
       title: MailboxPkcs11SignResponsePayloadV1
       description: >-
-        Response payload for the `pkcs11_sign` envelope type. On success
-        `signature` is set; on failure `error_code` is set.
+        Response payload for the `pkcs11_sign` envelope type. Exactly one of
+        `signature` (success) or `error_code` (failure) MUST be present.
       type: object
       additionalProperties: false
       properties:
@@ -59,7 +59,7 @@ components:
           format: byte
           description: >-
             RFC 4648 standard base64 with `=` padding for the raw signature
-            bytes (no PKCS#1 framing).
+            bytes (no PKCS#1 framing). Present on success.
         error_code:
           $ref: 'common.yaml#/components/schemas/SigningErrorCode'
         error_message:
@@ -68,6 +68,9 @@ components:
           example: User rejected the request
         approval_proof:
           $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+      oneOf:
+        - required: [signature]
+        - required: [error_code]
 
     # ---- pkcs11_derive ----------------------------------------------------
 
@@ -80,7 +83,7 @@ components:
         shared secret through a KDF.
       type: object
       additionalProperties: false
-      required: [peer_public_hex]
+      required: [peer_public_hex, device_key_id]
       properties:
         peer_public_hex:
           type: string
@@ -106,8 +109,9 @@ components:
     MailboxPkcs11DeriveResponsePayloadV1:
       title: MailboxPkcs11DeriveResponsePayloadV1
       description: >-
-        Response payload for the `pkcs11_derive` envelope type. On success
-        `shared_secret` is set; on failure `error_code` is set.
+        Response payload for the `pkcs11_derive` envelope type. Exactly one
+        of `shared_secret` (success) or `error_code` (failure) MUST be
+        present.
       type: object
       additionalProperties: false
       properties:
@@ -117,7 +121,7 @@ components:
           description: >-
             RFC 4648 standard base64 with `=` padding for the derived shared
             secret (post-KDF if `kdf` was supplied, otherwise raw ECDH X
-            output).
+            output). Present on success.
           example: c2hhcmVkIHNlY3JldA==
         error_code:
           $ref: 'common.yaml#/components/schemas/SigningErrorCode'
@@ -127,6 +131,9 @@ components:
           example: User rejected the request
         approval_proof:
           $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+      oneOf:
+        - required: [shared_secret]
+        - required: [error_code]
 
     Pkcs11DeriveKdfParams:
       title: Pkcs11DeriveKdfParams

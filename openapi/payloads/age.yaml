@@ -53,8 +53,8 @@ components:
     MailboxAgeUnwrapResponsePayloadV1:
       title: MailboxAgeUnwrapResponsePayloadV1
       description: >-
-        Response payload for the `age_unwrap` envelope type. On success
-        `file_key` is set; on failure `error_code` is set.
+        Response payload for the `age_unwrap` envelope type. Exactly one of
+        `file_key` (success) or `error_code` (failure) MUST be present.
       type: object
       additionalProperties: false
       properties:
@@ -63,7 +63,7 @@ components:
           format: byte
           description: >-
             RFC 4648 standard base64 with `=` padding for the unwrapped age
-            file key.
+            file key. Present on success.
           example: ZmlsZSBrZXk=
         error_code:
           $ref: 'common.yaml#/components/schemas/SigningErrorCode'
@@ -73,3 +73,6 @@ components:
           example: User rejected the request
         approval_proof:
           $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+      oneOf:
+        - required: [file_key]
+        - required: [error_code]

@@ -50,17 +50,37 @@ components:
     MailboxEnrollResponsePayloadV1:
       title: MailboxEnrollResponsePayloadV1
       description: >-
-        Response payload for the `enroll` envelope type. On success
-        `status: approved` and the public material fields are set; on failure
-        `status: rejected` and `error_code` is set.
+        Response payload for the `enroll` envelope type. Discriminated on
+        `status`: `approved` requires the full key material set; `rejected`
+        requires `error_code`.
+      oneOf:
+        - $ref: '#/components/schemas/MailboxEnrollResponseApprovedV1'
+        - $ref: '#/components/schemas/MailboxEnrollResponseRejectedV1'
+      discriminator:
+        propertyName: status
+        mapping:
+          approved: '#/components/schemas/MailboxEnrollResponseApprovedV1'
+          rejected: '#/components/schemas/MailboxEnrollResponseRejectedV1'
+
+    MailboxEnrollResponseApprovedV1:
+      title: MailboxEnrollResponseApprovedV1
+      description: >-
+        Approved branch of `MailboxEnrollResponsePayloadV1`. Carries the
+        freshly minted public key material so the requester can refer to the
+        new key in subsequent signing / decryption requests.
       type: object
       additionalProperties: false
-      required: [status]
+      required:
+        - status
+        - id
+        - public_key_hex
+        - device_key_id
+        - algorithm
       properties:
         status:
           type: string
-          enum: [approved, rejected]
-          description: Enrollment outcome.
+          enum: [approved]
+          description: Enrollment outcome discriminator (`approved`).
           example: approved
         id:
           type: string
@@ -116,11 +136,26 @@ components:
           pattern: '^[0-9A-F]{40}$'
         attestation:
           $ref: 'common.yaml#/components/schemas/KeyMetadataAttestation'
+        approval_proof:
+          $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+
+    MailboxEnrollResponseRejectedV1:
+      title: MailboxEnrollResponseRejectedV1
+      description: >-
+        Rejected branch of `MailboxEnrollResponsePayloadV1`. Carries the
+        signing error code (and optional human-readable message).
+      type: object
+      additionalProperties: false
+      required: [status, error_code]
+      properties:
+        status:
+          type: string
+          enum: [rejected]
+          description: Enrollment outcome discriminator (`rejected`).
+          example: rejected
         error_code:
           $ref: 'common.yaml#/components/schemas/SigningErrorCode'
         error_message:
           type: string
           description: Human-readable error message.
           example: User rejected the enrollment
-        approval_proof:
-          $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'

@@ -22,7 +22,7 @@ components:
         with the primary GPG signing key selected by `device_key_id`.
       type: object
       additionalProperties: false
-      required: [raw_data]
+      required: [raw_data, device_key_id]
       properties:
         raw_data:
           type: string
@@ -50,14 +50,15 @@ components:
     MailboxGpgSignResponsePayloadV1:
       title: MailboxGpgSignResponsePayloadV1
       description: >-
-        Response payload for the `gpg_sign` envelope type. On success
-        `armored_signature` is set; on failure `error_code` is set.
+        Response payload for the `gpg_sign` envelope type. Exactly one of
+        `armored_signature` (success) or `error_code` (failure) MUST be
+        present.
       type: object
       additionalProperties: false
       properties:
         armored_signature:
           type: string
-          description: ASCII-armored OpenPGP signature.
+          description: ASCII-armored OpenPGP signature. Present on success.
           example: '-----BEGIN PGP SIGNATURE-----...'
         error_code:
           $ref: 'common.yaml#/components/schemas/SigningErrorCode'
@@ -67,6 +68,9 @@ components:
           example: User rejected the request
         approval_proof:
           $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+      oneOf:
+        - required: [armored_signature]
+        - required: [error_code]
 
     # ---- gpg_decrypt ------------------------------------------------------
 
@@ -78,7 +82,7 @@ components:
         encryption subkey selected by `device_key_id`.
       type: object
       additionalProperties: false
-      required: [encrypted_data, pkesk]
+      required: [encrypted_data, pkesk, device_key_id]
       properties:
         encrypted_data:
           type: string
@@ -107,8 +111,10 @@ components:
     MailboxGpgDecryptResponsePayloadV1:
       title: MailboxGpgDecryptResponsePayloadV1
       description: >-
-        Response payload for the `gpg_decrypt` envelope type. On success
-        `session_key` and `algorithm` are set; on failure `error_code` is set.
+        Response payload for the `gpg_decrypt` envelope type. On success both
+        `session_key` and `algorithm` MUST be present together; on failure
+        `error_code` MUST be present. Exactly one of those two outcomes is
+        valid.
       type: object
       additionalProperties: false
       properties:
@@ -117,14 +123,16 @@ components:
           format: byte
           description: >-
             RFC 4648 standard base64 with `=` padding for the unwrapped
-            session key.
+            session key. Present together with `algorithm` on success.
           example: c2Vzc2lvbiBrZXk=
         algorithm:
           type: integer
           format: int32
           minimum: 0
           maximum: 255
-          description: OpenPGP symmetric algorithm id (RFC 4880 §9.2).
+          description: >-
+            OpenPGP symmetric algorithm id (RFC 4880 §9.2). Present together
+            with `session_key` on success.
           example: 9
         error_code:
           $ref: 'common.yaml#/components/schemas/SigningErrorCode'
@@ -134,6 +142,9 @@ components:
           example: User rejected the request
         approval_proof:
           $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+      oneOf:
+        - required: [session_key, algorithm]
+        - required: [error_code]
 
     PkeskData:
       title: PkeskData
