@@ -78,6 +78,39 @@ The Makefile bundles the multi-file OpenAPI sources via
 generator. Adding a new payload surface requires re-exporting its schemas
 from `openapi/payloads.yaml`.
 
+## Generator caveats
+
+Two well-known oapi-codegen behaviours that the Go binding does not
+paper over. Document them for callers and exercise them in the WS1.5
+smoke tests:
+
+- **`oneOf` `As<Branch>` is permissive.** Calling
+  `MailboxXxxResponsePayloadV1.AsMailboxXxxResponseSuccessV1()` will
+  succeed even on a failure-shaped JSON because `encoding/json` ignores
+  unknown fields and does not enforce missing required fields. Routing
+  call-sites SHOULD inspect the union with `Discriminator()` (when a
+  discriminator field is present, e.g. `MailboxEnrollResponsePayloadV1`)
+  or check that the success-only field is non-zero before treating the
+  result as a success.
+- **`additionalProperties: false` is not enforced by `encoding/json`.**
+  Every payload schema sets `additionalProperties: false` and the Swift
+  / TypeScript bindings honour it. Go callers MUST opt into strict
+  decoding with `dec := json.NewDecoder(r); dec.DisallowUnknownFields()`
+  if the service-level invariant is "reject envelopes with unknown
+  extra fields"; the generated structs do not enable
+  `DisallowUnknownFields` for them.
+
+The envelope `payload` field is generated as `json.RawMessage` in Go via
+the `x-go-type` extension so per-`type` handlers can decode the original
+byte stream without losing precision (the default
+`map[string]interface{}` representation widens int64 values to float64).
+
+The envelope `type` field is modelled as a plain `string` (not the
+`MailboxEnvelopeType` enum) so receivers can decode forward-compatible
+envelopes whose `type` is not yet in the published registry, then
+log-and-drop. Validate against the `MailboxEnvelopeType` enum at
+runtime, not at the codec layer.
+
 ## Coding Style & Naming Conventions
 
 - OpenAPI: 2-space indentation; schema names in PascalCase with the

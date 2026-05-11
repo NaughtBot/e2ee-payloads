@@ -1,0 +1,1003 @@
+openapi: 3.0.3
+info:
+  title: NaughtBot e2ee mailbox payloads (bundle root)
+  description: Aggregator entry point that re-exports every component schema authored under `openapi/`. The Makefile's `make bundle` target feeds this file to Redocly to produce `openapi/bundled/payloads.yaml`, a single self-contained document that the Go / Swift / TypeScript generators consume. Hand-edited only when adding a new payload surface — bump the `components.schemas` table to re-export the new schemas.
+  version: 0.1.0
+  license:
+    name: MIT
+paths: {}
+components:
+  schemas:
+    MailboxEnvelopeV1:
+      title: MailboxEnvelopeV1
+      description: Typed plaintext envelope for NaughtBot mailbox payloads. Receivers dispatch on `type`. The schema is documentary — the auth/mailbox backend never sees the envelope (it is inside HPKE plaintext) and no endpoint accepts it directly. See `core/memories/mailbox-envelope.md` for the canonical decode rules until that memory migrates here with the rest of the schema-relocation follow-up.
+      type: object
+      additionalProperties: false
+      required:
+        - v
+        - type
+        - id
+        - issued_at
+        - payload
+      properties:
+        v:
+          type: integer
+          enum:
+            - 1
+          description: Envelope version. Receivers reject unknown versions.
+        type:
+          type: string
+          minLength: 1
+          example: ssh_sign
+          description: Registered type discriminator. Receivers SHOULD validate against the `MailboxEnvelopeType` registry enum at runtime; unknown values MUST be logged and dropped without rejecting the envelope.
+        id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+          description: Canonical lower-case RFC 4122 UUID string for idempotency / dedup on the receiver.
+        issued_at:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$
+          example: '2026-05-03T05:00:00.123Z'
+          description: RFC 3339 UTC timestamp with the canonical `Z` suffix. Senders SHOULD emit fractional seconds (`2026-05-03T05:00:00.123Z`); receivers MUST also accept the plain second-precision form (`2026-05-03T05:00:00Z`). Times outside UTC and timestamps lacking the `T` delimiter are rejected.
+        payload:
+          type: object
+          additionalProperties: true
+          x-go-type: json.RawMessage
+          description: Type-specific payload, MUST be a JSON object (`{...}`); scalar / array / string roots are not valid envelopes. The internal schema is validated by the per-`type` handler defined under `payloads/`, not by the envelope codec.
+    MailboxEnvelopeType:
+      title: MailboxEnvelopeType
+      description: Registered set of envelope `type` discriminators. Receivers may decode the envelope successfully but log+drop on unknown values. Adding a new type requires adding it here and shipping the matching payload schema under `payloads/<surface>.yaml`.
+      type: string
+      enum:
+        - link_request
+        - link_approval
+        - link_rejection
+        - captcha_request
+        - captcha_response
+        - ssh_auth
+        - ssh_sign
+        - gpg_sign
+        - gpg_decrypt
+        - age_unwrap
+        - pkcs11_sign
+        - pkcs11_derive
+        - enroll
+      example: ssh_sign
+    ApprovalChallenge:
+      title: ApprovalChallenge
+      description: Canonical Longfellow / attested-key-zk approval challenge. Producer sends this inside the request payload; the approver binds it into the approval proof returned in the response payload.
+      type: object
+      additionalProperties: false
+      required:
+        - version
+        - nonce
+        - request_id
+        - plaintext_hash
+      properties:
+        version:
+          type: string
+          enum:
+            - approval-challenge/v1
+          description: Canonical approval challenge format version.
+        nonce:
+          type: string
+          description: Opaque nonce bound into the approval challenge and proof statement.
+        request_id:
+          type: string
+          description: Relay request id that scopes the approval proof.
+        plaintext_hash:
+          type: string
+          description: SHA-256 digest of the approved plaintext, formatted as `sha256:<hex>`.
+          pattern: ^sha256:[0-9a-f]{64}$
+    ApprovalProofStatement:
+      title: ApprovalProofStatement
+      description: Public Longfellow statement bound into the zero-knowledge proof.
+      type: object
+      additionalProperties: false
+      required:
+        - issuer_public_key_hex
+        - app_id_hash_hex
+        - policy_version
+        - now
+        - challenge_nonce_hex
+        - audience_hash_hex
+        - approval_hash_hex
+      properties:
+        issuer_public_key_hex:
+          type: string
+          description: 'Lowercase hex-encoded compressed P-256 issuer public key (66 hex chars, 33 bytes: `0x02`/`0x03` || X).'
+          pattern: ^(02|03)[0-9a-f]{64}$
+        app_id_hash_hex:
+          type: string
+          description: Lowercase hex-encoded SHA-256 hash of the mobile app identifier.
+          pattern: ^[0-9a-f]{64}$
+        policy_version:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Policy version embedded into the approval proof statement.
+        now:
+          type: integer
+          format: int64
+          description: Unix timestamp in seconds embedded into the approval proof statement.
+        challenge_nonce_hex:
+          type: string
+          description: Lowercase hex-encoded SHA-256 hash of `ApprovalChallenge.nonce`.
+          pattern: ^[0-9a-f]{64}$
+        audience_hash_hex:
+          type: string
+          description: Lowercase hex-encoded SHA-256 hash of the verifier audience string.
+          pattern: ^[0-9a-f]{64}$
+        approval_hash_hex:
+          type: string
+          description: Lowercase hex-encoded SHA-256 hash of the canonical approval challenge JSON.
+          pattern: ^[0-9a-f]{64}$
+    ApprovalAttestationV1:
+      title: ApprovalAttestationV1
+      description: Service-issued approval attestation embedded into the Longfellow proof witness.
+      type: object
+      additionalProperties: false
+      required:
+        - version
+        - bytes
+        - signature
+      properties:
+        version:
+          type: string
+          enum:
+            - approval-attestation/v1
+          description: Canonical approval attestation format version.
+        bytes:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the `approval-attestation/v1` bytes embedded into the Longfellow proof witness.
+        signature:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the raw 64-byte P-256 `r || s` signature over `SHA256(bytes)`.
+    ApprovalAttestedKeyProof:
+      title: ApprovalAttestedKeyProof
+      description: Canonical Longfellow approval proof carried inside encrypted approval responses.
+      type: object
+      additionalProperties: false
+      required:
+        - version
+        - challenge
+        - statement
+        - attestation
+        - proof
+      properties:
+        version:
+          type: string
+          enum:
+            - approval-attested-key-proof/v1
+          description: Canonical approval proof format version.
+        challenge:
+          $ref: '#/components/schemas/ApprovalChallenge'
+        statement:
+          $ref: '#/components/schemas/ApprovalProofStatement'
+        attestation:
+          $ref: '#/components/schemas/ApprovalAttestationV1'
+        proof:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the Longfellow approval proof bytes.
+    AttestationSecurityType:
+      title: AttestationSecurityType
+      description: Combined platform and security level for attestation.
+      type: string
+      enum:
+        - ios_secure_enclave
+        - android_tee
+        - android_strongbox
+        - software
+        - play_integrity
+    KeyMetadataAttestation:
+      title: KeyMetadataAttestation
+      description: Attestation proof that a key was created on attested device hardware.
+      type: object
+      additionalProperties: false
+      required:
+        - public_key_hex
+        - assertion
+        - attestation_type
+        - challenge
+        - attestation_timestamp
+      properties:
+        public_key_hex:
+          type: string
+          description: Lowercase hex-encoded public key being attested (66 hex chars for P-256 33-byte compressed key, or 64 hex chars for Ed25519 32-byte key).
+          pattern: ^[0-9a-f]{64}([0-9a-f]{2})?$
+        assertion:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the App Attest assertion or software signature.
+        attestation_type:
+          $ref: '#/components/schemas/AttestationSecurityType'
+        attestation_object:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the Apple CBOR attestation object used by hardware attestation.
+        challenge:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for `SHA256(id || public_key || created_at || device_auth_public_key)`.
+        attestation_timestamp:
+          type: integer
+          format: int64
+          description: Unix timestamp in milliseconds.
+        attestation_public_key_hex:
+          type: string
+          description: Lowercase hex-encoded attestation key public key (66 hex chars for P-256 33-byte compressed key).
+          pattern: ^(02|03)[0-9a-f]{64}$
+    SigningErrorCode:
+      title: SigningErrorCode
+      description: Numeric error code returned in `*ResponsePayloadV1.error_code` when an approval flow fails. `1=rejected`, `2=timeout`, `3=key_not_found`, `4=invalid_payload`, `5=attestation_failed`, `6=internal_error`.
+      type: integer
+      enum:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+      example: 1
+    KeyPurpose:
+      title: KeyPurpose
+      description: Purpose of an enrolled key.
+      type: string
+      enum:
+        - ssh
+        - gpg
+        - age
+      example: ssh
+    DisplayField:
+      title: DisplayField
+      description: A single label/value row rendered on the approval surface.
+      type: object
+      additionalProperties: false
+      required:
+        - label
+        - value
+      properties:
+        label:
+          type: string
+          description: Short label for the field.
+          example: Repository
+        value:
+          type: string
+          description: Value to display.
+          example: github.com/user/repo
+        monospace:
+          type: boolean
+          description: Render the value in a monospace font.
+          default: false
+        expandable:
+          type: boolean
+          description: Field can be expanded to show additional content.
+          default: false
+        multiline:
+          type: boolean
+          description: Render the value across multiple lines.
+          default: false
+        sensitive:
+          type: boolean
+          description: Value contains sensitive information; UI may mask it.
+          default: false
+        icon:
+          type: string
+          description: Optional SF Symbol or Material icon name.
+    DisplaySchema:
+      title: DisplaySchema
+      description: Optional approval-UI metadata. Producers populate this on a best-effort basis; approvers MUST render the wire payload regardless of presence.
+      type: object
+      additionalProperties: false
+      required:
+        - title
+        - fields
+      properties:
+        title:
+          type: string
+          description: Main title for the approval screen.
+          example: Sign Git Commit
+        history_title:
+          type: string
+          description: Shorter title for the history list view.
+        subtitle:
+          type: string
+          description: Subtitle with additional context.
+        icon:
+          type: string
+          description: Optional icon name.
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/DisplayField'
+    ProcessEntry:
+      title: ProcessEntry
+      description: Entry in a process ancestry chain.
+      type: object
+      additionalProperties: false
+      required:
+        - pid
+        - username
+        - command
+      properties:
+        pid:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Process id.
+        username:
+          type: string
+          description: Username running the process.
+        command:
+          type: string
+          description: Command line of the process.
+    SourceInfo:
+      title: SourceInfo
+      description: Optional context about the requesting system. Producers populate this on a best-effort basis; approvers MUST NOT make security decisions on unauthenticated source metadata.
+      type: object
+      additionalProperties: false
+      properties:
+        hostname:
+          type: string
+          description: Source machine hostname.
+        local_ip:
+          type: string
+          description: Local/private IP address.
+        username:
+          type: string
+          description: User running the requesting process.
+        command:
+          type: string
+          description: Command line of the current process.
+        process_chain:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProcessEntry'
+          description: Full process tree from the current process up to init.
+    MailboxSshAuthRequestPayloadV1:
+      title: MailboxSshAuthRequestPayloadV1
+      description: Request payload for the `ssh_auth` envelope type. The approver signs an SSH user-authentication challenge constructed from `raw_data`, using the on-device key selected by `device_key_id`.
+      type: object
+      additionalProperties: false
+      required:
+        - raw_data
+        - device_key_id
+      properties:
+        raw_data:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the raw SSH challenge preimage. The approver builds the canonical SSH signature input from this preimage.
+          example: c3NoIGNoYWxsZW5nZQ==
+        key_id:
+          type: string
+          description: Identifier of the key to sign with.
+          example: key_abc123
+        application:
+          type: string
+          description: SSH application identifier (e.g. `ssh:`).
+          example: 'ssh:'
+        flags:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 255
+          description: SSH SK flags bitmask. Default `0x01` requires user presence.
+          default: 1
+          example: 1
+        device_key_id:
+          type: string
+          description: Device-side key identifier (e.g. iOS Secure Enclave handle) used to select among enrolled signing keys on the approver.
+        approval_challenge:
+          $ref: '#/components/schemas/ApprovalChallenge'
+        display:
+          $ref: '#/components/schemas/DisplaySchema'
+        source_info:
+          $ref: '#/components/schemas/SourceInfo'
+    MailboxSshAuthResponsePayloadV1:
+      title: MailboxSshAuthResponsePayloadV1
+      description: Response payload for the `ssh_auth` envelope type. Discriminated as a success / failure pair. Decoders pick `MailboxSshAuthResponseSuccessV1` if `signature` is present and `MailboxSshAuthResponseFailureV1` if `error_code` is present.
+      oneOf:
+        - $ref: '#/components/schemas/MailboxSshAuthResponseSuccessV1'
+        - $ref: '#/components/schemas/MailboxSshAuthResponseFailureV1'
+    MailboxSshAuthResponseSuccessV1:
+      title: MailboxSshAuthResponseSuccessV1
+      description: Success branch of `MailboxSshAuthResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required:
+        - signature
+      properties:
+        signature:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the raw SSH signature blob (no SSH-wire framing).
+        approval_proof:
+          $ref: '#/components/schemas/ApprovalAttestedKeyProof'
+    MailboxSshAuthResponseFailureV1:
+      title: MailboxSshAuthResponseFailureV1
+      description: Failure branch of `MailboxSshAuthResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required:
+        - error_code
+      properties:
+        error_code:
+          $ref: '#/components/schemas/SigningErrorCode'
+        error_message:
+          type: string
+          description: Human-readable error message.
+          example: User rejected the request
+    MailboxSshSignRequestPayloadV1:
+      title: MailboxSshSignRequestPayloadV1
+      description: Request payload for the `ssh_sign` envelope type. The approver signs an SSH signature input derived from `raw_data` (e.g. `git commit -S` SSH signing), using the on-device key selected by `device_key_id`.
+      type: object
+      additionalProperties: false
+      required:
+        - raw_data
+        - device_key_id
+      properties:
+        raw_data:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the raw data to sign (preimage). The approver builds the canonical SSH signature input from this preimage.
+          example: ZGF0YSB0byBzaWdu
+        key_id:
+          type: string
+          description: Identifier of the key to sign with.
+          example: key_abc123
+        application:
+          type: string
+          description: SSH application identifier (e.g. `ssh:`).
+          example: 'ssh:'
+        flags:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 255
+          description: SSH SK flags bitmask. Default `0x01` requires user presence.
+          default: 1
+          example: 1
+        device_key_id:
+          type: string
+          description: Device-side key identifier (e.g. iOS Secure Enclave handle) used to select among enrolled signing keys on the approver.
+        approval_challenge:
+          $ref: '#/components/schemas/ApprovalChallenge'
+        display:
+          $ref: '#/components/schemas/DisplaySchema'
+        source_info:
+          $ref: '#/components/schemas/SourceInfo'
+    MailboxSshSignResponsePayloadV1:
+      title: MailboxSshSignResponsePayloadV1
+      description: Response payload for the `ssh_sign` envelope type. Discriminated as a success / failure pair.
+      oneOf:
+        - $ref: '#/components/schemas/MailboxSshSignResponseSuccessV1'
+        - $ref: '#/components/schemas/MailboxSshSignResponseFailureV1'
+    MailboxSshSignResponseSuccessV1:
+      title: MailboxSshSignResponseSuccessV1
+      description: Success branch of `MailboxSshSignResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required:
+        - signature
+      properties:
+        signature:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the raw SSH signature blob (no SSH-wire framing).
+        approval_proof:
+          $ref: '#/components/schemas/ApprovalAttestedKeyProof'
+    MailboxSshSignResponseFailureV1:
+      title: MailboxSshSignResponseFailureV1
+      description: Failure branch of `MailboxSshSignResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required:
+        - error_code
+      properties:
+        error_code:
+          $ref: '#/components/schemas/SigningErrorCode'
+        error_message:
+          type: string
+          description: Human-readable error message.
+          example: User rejected the request
+    MailboxGpgSignRequestPayloadV1:
+      title: MailboxGpgSignRequestPayloadV1
+      description: Request payload for the `gpg_sign` envelope type. The approver builds the OpenPGP hash input from `raw_data` and signs the resulting digest with the primary GPG signing key selected by `device_key_id`.
+      type: object
+      additionalProperties: false
+      required:
+        - raw_data
+        - device_key_id
+      properties:
+        raw_data:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the raw data to sign (preimage). The approver builds the OpenPGP hash input from this preimage and signs the resulting digest.
+          example: cmF3IGRhdGE=
+        device_key_id:
+          type: string
+          description: Hex-encoded public key selecting which on-device GPG primary key the approver should use for signing. The mailbox/poll path requires this because the envelope does not otherwise carry a key identifier.
+          example: 034dc708f0fda9462584485537d588657e68c808dae0edb8cc556459a7975229e8
+        approval_challenge:
+          $ref: '#/components/schemas/ApprovalChallenge'
+        display:
+          $ref: '#/components/schemas/DisplaySchema'
+        source_info:
+          $ref: '#/components/schemas/SourceInfo'
+    MailboxGpgSignResponsePayloadV1:
+      title: MailboxGpgSignResponsePayloadV1
+      description: Response payload for the `gpg_sign` envelope type. Discriminated as a success / failure pair.
+      oneOf:
+        - $ref: '#/components/schemas/MailboxGpgSignResponseSuccessV1'
+        - $ref: '#/components/schemas/MailboxGpgSignResponseFailureV1'
+    MailboxGpgSignResponseSuccessV1:
+      title: MailboxGpgSignResponseSuccessV1
+      description: Success branch of `MailboxGpgSignResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required:
+        - armored_signature
+      properties:
+        armored_signature:
+          type: string
+          description: ASCII-armored OpenPGP signature.
+          example: '-----BEGIN PGP SIGNATURE-----...'
+        approval_proof:
+          $ref: '#/components/schemas/ApprovalAttestedKeyProof'
+    MailboxGpgSignResponseFailureV1:
+      title: MailboxGpgSignResponseFailureV1
+      description: Failure branch of `MailboxGpgSignResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required:
+        - error_code
+      properties:
+        error_code:
+          $ref: '#/components/schemas/SigningErrorCode'
+        error_message:
+          type: string
+          description: Human-readable error message.
+          example: User rejected the request
+    MailboxGpgDecryptRequestPayloadV1:
+      title: MailboxGpgDecryptRequestPayloadV1
+      description: Request payload for the `gpg_decrypt` envelope type. The approver unwraps the OpenPGP Public Key Encrypted Session Key packet using the encryption subkey selected by `device_key_id`.
+      type: object
+      additionalProperties: false
+      required:
+        - encrypted_data
+        - pkesk
+        - device_key_id
+      properties:
+        encrypted_data:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the encrypted data to decrypt.
+          example: ZW5jcnlwdGVkIGRhdGE=
+        pkesk:
+          $ref: '#/components/schemas/PkeskData'
+        device_key_id:
+          type: string
+          description: Hex-encoded public key selecting which on-device GPG encryption subkey the approver should use for ECDH. The mailbox/poll path requires this because the envelope does not otherwise carry a key identifier.
+          example: 034dc708f0fda9462584485537d588657e68c808dae0edb8cc556459a7975229e8
+        approval_challenge:
+          $ref: '#/components/schemas/ApprovalChallenge'
+        display:
+          $ref: '#/components/schemas/DisplaySchema'
+        source_info:
+          $ref: '#/components/schemas/SourceInfo'
+    MailboxGpgDecryptResponsePayloadV1:
+      title: MailboxGpgDecryptResponsePayloadV1
+      description: Response payload for the `gpg_decrypt` envelope type. Discriminated as a success / failure pair. The success branch carries both `session_key` and `algorithm`; the failure branch carries `error_code`.
+      oneOf:
+        - $ref: '#/components/schemas/MailboxGpgDecryptResponseSuccessV1'
+        - $ref: '#/components/schemas/MailboxGpgDecryptResponseFailureV1'
+    MailboxGpgDecryptResponseSuccessV1:
+      title: MailboxGpgDecryptResponseSuccessV1
+      description: Success branch of `MailboxGpgDecryptResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required:
+        - session_key
+        - algorithm
+      properties:
+        session_key:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the unwrapped session key.
+          example: c2Vzc2lvbiBrZXk=
+        algorithm:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 255
+          description: OpenPGP symmetric algorithm id (RFC 4880 §9.2).
+          example: 9
+        approval_proof:
+          $ref: '#/components/schemas/ApprovalAttestedKeyProof'
+    MailboxGpgDecryptResponseFailureV1:
+      title: MailboxGpgDecryptResponseFailureV1
+      description: Failure branch of `MailboxGpgDecryptResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required:
+        - error_code
+      properties:
+        error_code:
+          $ref: '#/components/schemas/SigningErrorCode'
+        error_message:
+          type: string
+          description: Human-readable error message.
+          example: User rejected the request
+    PkeskData:
+      title: PkeskData
+      description: OpenPGP Public Key Encrypted Session Key packet data.
+      type: object
+      additionalProperties: false
+      required:
+        - version
+        - key_id
+        - algorithm
+        - ephemeral_point
+        - wrapped_key
+      properties:
+        version:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 255
+          description: PKESK packet version (typically 3).
+          example: 3
+        key_id:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the 8-byte recipient key id.
+          example: a2V5X2lkMTIz
+        algorithm:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 255
+          description: OpenPGP public key algorithm (RFC 4880 §9.1). `18` is ECDH.
+          example: 18
+        ephemeral_point:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the ephemeral ECDH public point (33 bytes compressed).
+          example: ZXBoZW1lcmFsX3BvaW50
+        wrapped_key:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the AES-wrapped session key.
+          example: d3JhcHBlZF9rZXk=
+    MailboxAgeUnwrapRequestPayloadV1:
+      title: MailboxAgeUnwrapRequestPayloadV1
+      description: Request payload for the `age_unwrap` envelope type. The approver unwraps an age `X25519` recipient stanza using the on-device X25519 key matching `recipient_public_hex`.
+      type: object
+      additionalProperties: false
+      required:
+        - ephemeral_public_hex
+        - wrapped_file_key
+        - recipient_public_hex
+      properties:
+        ephemeral_public_hex:
+          type: string
+          description: Lowercase hex-encoded sender's ephemeral X25519 public key (64 hex chars for the 32-byte key).
+          pattern: ^[0-9a-f]{64}$
+          example: a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2
+        wrapped_file_key:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the wrapped file key for decryption.
+          example: d3JhcHBlZCBmaWxlIGtleQ==
+        recipient_public_hex:
+          type: string
+          description: Lowercase hex-encoded recipient's X25519 public key (64 hex chars for the 32-byte key).
+          pattern: ^[0-9a-f]{64}$
+          example: b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3
+        approval_challenge:
+          $ref: '#/components/schemas/ApprovalChallenge'
+        display:
+          $ref: '#/components/schemas/DisplaySchema'
+        source_info:
+          $ref: '#/components/schemas/SourceInfo'
+    MailboxAgeUnwrapResponsePayloadV1:
+      title: MailboxAgeUnwrapResponsePayloadV1
+      description: Response payload for the `age_unwrap` envelope type. Discriminated as a success / failure pair.
+      oneOf:
+        - $ref: '#/components/schemas/MailboxAgeUnwrapResponseSuccessV1'
+        - $ref: '#/components/schemas/MailboxAgeUnwrapResponseFailureV1'
+    MailboxAgeUnwrapResponseSuccessV1:
+      title: MailboxAgeUnwrapResponseSuccessV1
+      description: Success branch of `MailboxAgeUnwrapResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required:
+        - file_key
+      properties:
+        file_key:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the unwrapped age file key.
+          example: ZmlsZSBrZXk=
+        approval_proof:
+          $ref: '#/components/schemas/ApprovalAttestedKeyProof'
+    MailboxAgeUnwrapResponseFailureV1:
+      title: MailboxAgeUnwrapResponseFailureV1
+      description: Failure branch of `MailboxAgeUnwrapResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required:
+        - error_code
+      properties:
+        error_code:
+          $ref: '#/components/schemas/SigningErrorCode'
+        error_message:
+          type: string
+          description: Human-readable error message.
+          example: User rejected the request
+    MailboxPkcs11SignRequestPayloadV1:
+      title: MailboxPkcs11SignRequestPayloadV1
+      description: Request payload for the `pkcs11_sign` envelope type. The approver computes the SHA-256 digest of `raw_data` and signs it with the on-device key selected by `device_key_id`.
+      type: object
+      additionalProperties: false
+      required:
+        - raw_data
+        - device_key_id
+      properties:
+        raw_data:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the raw data to sign (preimage). The approver computes the SHA-256 digest and signs it.
+          example: cGtjczExIGRhdGE=
+        device_key_id:
+          type: string
+          description: Hex-encoded public key selecting which on-device key the approver should use for signing.
+        display:
+          $ref: '#/components/schemas/DisplaySchema'
+        approval_challenge:
+          $ref: '#/components/schemas/ApprovalChallenge'
+        source_info:
+          $ref: '#/components/schemas/SourceInfo'
+    MailboxPkcs11SignResponsePayloadV1:
+      title: MailboxPkcs11SignResponsePayloadV1
+      description: Response payload for the `pkcs11_sign` envelope type. Discriminated as a success / failure pair.
+      oneOf:
+        - $ref: '#/components/schemas/MailboxPkcs11SignResponseSuccessV1'
+        - $ref: '#/components/schemas/MailboxPkcs11SignResponseFailureV1'
+    MailboxPkcs11SignResponseSuccessV1:
+      title: MailboxPkcs11SignResponseSuccessV1
+      description: Success branch of `MailboxPkcs11SignResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required:
+        - signature
+      properties:
+        signature:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the raw signature bytes (no PKCS#1 framing).
+        approval_proof:
+          $ref: '#/components/schemas/ApprovalAttestedKeyProof'
+    MailboxPkcs11SignResponseFailureV1:
+      title: MailboxPkcs11SignResponseFailureV1
+      description: Failure branch of `MailboxPkcs11SignResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required:
+        - error_code
+      properties:
+        error_code:
+          $ref: '#/components/schemas/SigningErrorCode'
+        error_message:
+          type: string
+          description: Human-readable error message.
+          example: User rejected the request
+    MailboxPkcs11DeriveRequestPayloadV1:
+      title: MailboxPkcs11DeriveRequestPayloadV1
+      description: Request payload for the `pkcs11_derive` envelope type. The approver runs ECDH between the on-device private key selected by `device_key_id` and the peer public key, optionally feeding the shared secret through a KDF.
+      type: object
+      additionalProperties: false
+      required:
+        - peer_public_hex
+        - device_key_id
+      properties:
+        peer_public_hex:
+          type: string
+          description: Lowercase hex-encoded peer public key for ECDH (66 hex chars for P-256 33-byte compressed key).
+          pattern: ^(02|03)[0-9a-f]{64}$
+          example: 02a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2
+        device_key_id:
+          type: string
+          description: Hex-encoded public key selecting which on-device key the approver should use for ECDH.
+        kdf:
+          $ref: '#/components/schemas/Pkcs11DeriveKdfParams'
+        approval_challenge:
+          $ref: '#/components/schemas/ApprovalChallenge'
+        display:
+          $ref: '#/components/schemas/DisplaySchema'
+        source_info:
+          $ref: '#/components/schemas/SourceInfo'
+    MailboxPkcs11DeriveResponsePayloadV1:
+      title: MailboxPkcs11DeriveResponsePayloadV1
+      description: Response payload for the `pkcs11_derive` envelope type. Discriminated as a success / failure pair.
+      oneOf:
+        - $ref: '#/components/schemas/MailboxPkcs11DeriveResponseSuccessV1'
+        - $ref: '#/components/schemas/MailboxPkcs11DeriveResponseFailureV1'
+    MailboxPkcs11DeriveResponseSuccessV1:
+      title: MailboxPkcs11DeriveResponseSuccessV1
+      description: Success branch of `MailboxPkcs11DeriveResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required:
+        - shared_secret
+      properties:
+        shared_secret:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the derived shared secret (post-KDF if `kdf` was supplied, otherwise raw ECDH X output).
+          example: c2hhcmVkIHNlY3JldA==
+        approval_proof:
+          $ref: '#/components/schemas/ApprovalAttestedKeyProof'
+    MailboxPkcs11DeriveResponseFailureV1:
+      title: MailboxPkcs11DeriveResponseFailureV1
+      description: Failure branch of `MailboxPkcs11DeriveResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required:
+        - error_code
+      properties:
+        error_code:
+          $ref: '#/components/schemas/SigningErrorCode'
+        error_message:
+          type: string
+          description: Human-readable error message.
+          example: User rejected the request
+    Pkcs11DeriveKdfParams:
+      title: Pkcs11DeriveKdfParams
+      description: Optional key derivation parameters applied to the ECDH shared secret.
+      type: object
+      additionalProperties: false
+      required:
+        - algorithm
+      properties:
+        algorithm:
+          type: string
+          description: KDF algorithm name. Approvers MUST reject unknown algorithms.
+          example: HKDF-SHA256
+        key_length:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 64
+          description: Desired output key length in bytes.
+          example: 32
+        info:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the optional KDF `info` parameter.
+    MailboxEnrollRequestPayloadV1:
+      title: MailboxEnrollRequestPayloadV1
+      description: Request payload for the `enroll` envelope type. The approver creates a new key for the requested `purpose` and returns its public material.
+      type: object
+      additionalProperties: false
+      required:
+        - purpose
+      properties:
+        purpose:
+          $ref: '#/components/schemas/KeyPurpose'
+        label:
+          type: string
+          description: Human-readable label for the new key.
+          example: Work Laptop SSH Key
+        algorithm:
+          type: string
+          description: Key algorithm to use. Approver MUST reject unknown algorithms.
+          example: ed25519
+        include_certification:
+          type: boolean
+          description: Include a self-certification signature for GPG export. Ignored for non-GPG purposes.
+          default: false
+        approval_challenge:
+          $ref: '#/components/schemas/ApprovalChallenge'
+        display:
+          $ref: '#/components/schemas/DisplaySchema'
+        source_info:
+          $ref: '#/components/schemas/SourceInfo'
+    MailboxEnrollResponsePayloadV1:
+      title: MailboxEnrollResponsePayloadV1
+      description: 'Response payload for the `enroll` envelope type. Discriminated on `status`: `approved` requires the full key material set; `rejected` requires `error_code`.'
+      oneOf:
+        - $ref: '#/components/schemas/MailboxEnrollResponseApprovedV1'
+        - $ref: '#/components/schemas/MailboxEnrollResponseRejectedV1'
+      discriminator:
+        propertyName: status
+        mapping:
+          approved: '#/components/schemas/MailboxEnrollResponseApprovedV1'
+          rejected: '#/components/schemas/MailboxEnrollResponseRejectedV1'
+    MailboxEnrollResponseApprovedV1:
+      title: MailboxEnrollResponseApprovedV1
+      description: Approved branch of `MailboxEnrollResponsePayloadV1`. Carries the freshly minted public key material so the requester can refer to the new key in subsequent signing / decryption requests.
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - id
+        - public_key_hex
+        - device_key_id
+        - algorithm
+      properties:
+        status:
+          type: string
+          enum:
+            - approved
+          description: Enrollment outcome discriminator (`approved`).
+          example: approved
+        id:
+          type: string
+          description: New key identifier. UUID for GPG keys; format defined by the algorithm for other purposes.
+          example: 550e8400-e29b-41d4-a716-446655440000
+        public_key_hex:
+          type: string
+          description: Lowercase hex-encoded public key. 66 hex chars for P-256 33-byte compressed key, or 64 hex chars for Ed25519 32-byte key.
+          pattern: ^[0-9a-f]{64}([0-9a-f]{2})?$
+        device_key_id:
+          type: string
+          description: Device-side key identifier (e.g. iOS Secure Enclave handle) the requester can use to refer to the new key in subsequent requests.
+        algorithm:
+          type: string
+          description: Key algorithm used.
+          example: ed25519
+        fingerprint:
+          type: string
+          description: GPG fingerprint for GPG keys (40 hex chars).
+          pattern: ^[0-9A-F]{40}$
+        key_creation_timestamp:
+          type: integer
+          format: int64
+          description: Unix timestamp (seconds) when the key was created.
+          example: 1705320000
+        user_id_signature:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the GPG self-certification signature.
+        subkey_signature:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the GPG subkey binding signature.
+        encryption_public_key_hex:
+          type: string
+          description: Lowercase hex-encoded ECDH encryption subkey public key (66 hex chars for P-256 33-byte compressed key).
+          pattern: ^(02|03)[0-9a-f]{64}$
+        encryption_fingerprint:
+          type: string
+          description: 40-character hex fingerprint of the ECDH encryption subkey.
+          pattern: ^[0-9A-F]{40}$
+        attestation:
+          $ref: '#/components/schemas/KeyMetadataAttestation'
+        approval_proof:
+          $ref: '#/components/schemas/ApprovalAttestedKeyProof'
+    MailboxEnrollResponseRejectedV1:
+      title: MailboxEnrollResponseRejectedV1
+      description: Rejected branch of `MailboxEnrollResponsePayloadV1`. Carries the signing error code (and optional human-readable message).
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - error_code
+      properties:
+        status:
+          type: string
+          enum:
+            - rejected
+          description: Enrollment outcome discriminator (`rejected`).
+          example: rejected
+        error_code:
+          $ref: '#/components/schemas/SigningErrorCode'
+        error_message:
+          type: string
+          description: Human-readable error message.
+          example: User rejected the enrollment
