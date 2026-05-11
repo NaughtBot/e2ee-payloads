@@ -1,0 +1,148 @@
+name: release
+
+# Tag-driven release. Pushing a `v<MAJOR>.<MINOR>.<PATCH>` tag at a
+# clean main commit runs:
+#
+#   1. Drift gate: regenerate every binding and assert git diff is
+#      empty. Prevents publishing a release whose committed bindings
+#      do not match the openapi/ sources at the tag.
+#   2. Per-language subdirectory tags: `go/<ver>`, `swift/<ver>`,
+#      `typescript/<ver>` — created on the same commit as the
+#      top-level `v<ver>` tag. The Go module resolver consumes the
+#      `go/<ver>` tag for the `/go/` subdir layout.
+#   3. GitHub release: opened against the top-level `v<ver>` tag with
+#      auto-generated notes.
+#   4. npm publish: `@naughtbot/e2ee-payloads@<ver>` via Trusted
+#      Publishing (OIDC) — matches the NaughtBot/api pattern.
+#
+# Releases are tag-driven only. Do not run any of the steps below
+# manually; pushing the tag is the entire release surface.
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: arc-runners-naughtbot
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Resolve version
+        id: version
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          version="${REF_NAME#v}"
+          if [ "$version" = "$REF_NAME" ] || [ -z "$version" ]; then
+            echo "release: expected tag vX.Y.Z, got '$REF_NAME'" >&2
+            exit 2
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/lint-and-go-typescript
+
+  swift:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Verify Swift drift at the tag commit
+        run: |
+          make generate-swift
+          dirty=$(git status --porcelain -- swift/Sources/NaughtBotE2EEPayloads 2>/dev/null)
+          if [ -n "$dirty" ]; then
+            echo "release: swift generator drift at the tag commit" >&2
+            printf '%s\n' "$dirty"
+            exit 1
+          fi
+
+      - name: Swift build
+        run: swift build
+
+      - name: Swift test
+        run: swift test
+
+  tag-and-release:
+    needs: [verify, swift]
+    runs-on: arc-runners-naughtbot
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Push per-language subdir tags
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          set -euo pipefail
+          for lang in go swift typescript; do
+            tag="${lang}/v${VERSION}"
+            if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+              echo "tag ${tag} already exists; skipping"
+              continue
+            fi
+            git tag -a "${tag}" -m "${lang} v${VERSION}"
+            git push origin "${tag}"
+          done
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          set -euo pipefail
+          gh release create "v${VERSION}" \
+            --title "v${VERSION}" \
+            --generate-notes
+
+  npm-publish:
+    needs: [verify, tag-and-release]
+    if: ${{ vars.NPM_TRUSTED_PUBLISHING_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+          cache-dependency-path: typescript/package-lock.json
+
+      - name: Install TypeScript deps
+        run: npm --prefix typescript ci
+
+      - name: Build TypeScript package
+        run: npm --prefix typescript run build
+
+      - name: Publish @naughtbot/e2ee-payloads
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        working-directory: typescript
+        run: |
+          set -euo pipefail
+          metadata=$(node -e 'const fs = require("node:fs"); const pkg = JSON.parse(fs.readFileSync("package.json","utf8")); process.stdout.write(`${pkg.name}\t${pkg.version}`);')
+          IFS=$'\t' read -r package_name package_version <<< "$metadata"
+          if [ "$package_version" != "$VERSION" ]; then
+            echo "release: package.json version ($package_version) does not match tag ($VERSION); commit the bump before tagging." >&2
+            exit 2
+          fi
+          if published_version=$(npm view "${package_name}@${package_version}" version 2>/dev/null) \
+              && [ "$published_version" = "$package_version" ]; then
+            echo "${package_name}@${package_version} already exists on npm; skipping."
+            exit 0
+          fi
+          npm publish --access public

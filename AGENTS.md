@@ -122,19 +122,33 @@ runtime, not at the codec layer.
 
 ## Release Workflow
 
-**Releases are tag-driven only.** Do not run release scripts manually.
+**Releases are tag-driven only.** Do not run any release step manually
+(no local `npm publish`, no manual subdirectory tagging, no manual
+GitHub release creation). Pushing the tag is the entire release surface.
 
 1. Land schema/binding changes on `main` via PRs.
-2. Push a `v<MAJOR>.<MINOR>.<PATCH>` tag at the release commit.
-3. `release.yml` regenerates bindings, asserts a clean diff, creates the
-   per-language subdirectory tags `go/v<ver>`, `swift/v<ver>`,
-   `typescript/v<ver>`, opens a GitHub release, and publishes the npm
-   package to `@naughtbot/e2ee-payloads`.
+2. Bump `typescript/package.json` `version` to match the tag you are
+   about to push, in the same commit that lands the changes (or in a
+   bump-only PR right before tagging).
+3. Push a `v<MAJOR>.<MINOR>.<PATCH>` tag at the release commit:
+   `git tag v0.1.0 && git push origin v0.1.0`.
+4. `.github/workflows/release.yml` runs:
+   - drift gate (regenerate every binding, assert no diff at the tag
+     commit) on Linux + macOS;
+   - per-language subdirectory tags `go/v<ver>`, `swift/v<ver>`,
+     `typescript/v<ver>` pushed to the same commit;
+   - GitHub release for the top-level `v<ver>` with auto-generated
+     notes;
+   - npm publish of `@naughtbot/e2ee-payloads@<ver>` via Trusted
+     Publishing (OIDC). The npm publish job is gated on the
+     `NPM_TRUSTED_PUBLISHING_ENABLED` org variable so the workflow can
+     land before the npm side of the integration is fully provisioned.
 
-Go consumers import from `github.com/naughtbot/e2ee-payloads/go` and pin via
-`go get github.com/naughtbot/e2ee-payloads/go@v<ver>`. SwiftPM consumers
-depend on `https://github.com/NaughtBot/e2ee-payloads.git` and pin via
-`from: "<ver>"`. npm consumers install `@naughtbot/e2ee-payloads@<ver>`.
+Go consumers import from `github.com/naughtbot/e2ee-payloads/go` and
+pin via `go get github.com/naughtbot/e2ee-payloads/go@v<ver>`. SwiftPM
+consumers depend on `https://github.com/NaughtBot/e2ee-payloads.git`
+and pin via `from: "<ver>"`. npm consumers install
+`@naughtbot/e2ee-payloads@<ver>`.
 
 ## Testing Guidelines
 
