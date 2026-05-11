@@ -1,0 +1,349 @@
+openapi: 3.0.3
+info:
+  title: NaughtBot mailbox payload common types
+  description: >-
+    Shared building blocks referenced from per-surface payload schemas under
+    this directory: approval challenge / proof types, attestation metadata,
+    signing error codes, key purposes, optional display metadata, and source-
+    process context. Hand-edited; consumed via `$ref` from `ssh.yaml`,
+    `gpg.yaml`, `age.yaml`, `pkcs11.yaml`, and `enroll.yaml`.
+  version: 0.1.0
+  license:
+    name: MIT
+paths: {}
+components:
+  schemas:
+    # ---- Approval challenge / proof chain ---------------------------------
+
+    ApprovalChallenge:
+      title: ApprovalChallenge
+      description: >-
+        Canonical Longfellow / attested-key-zk approval challenge. Producer
+        sends this inside the request payload; the approver binds it into the
+        approval proof returned in the response payload.
+      type: object
+      additionalProperties: false
+      required: [version, nonce, request_id, plaintext_hash]
+      properties:
+        version:
+          type: string
+          enum: [approval-challenge/v1]
+          description: Canonical approval challenge format version.
+        nonce:
+          type: string
+          description: >-
+            Opaque nonce bound into the approval challenge and proof
+            statement.
+        request_id:
+          type: string
+          description: >-
+            Relay request id that scopes the approval proof.
+        plaintext_hash:
+          type: string
+          description: >-
+            SHA-256 digest of the approved plaintext, formatted as
+            `sha256:<hex>`.
+          pattern: '^sha256:[0-9a-f]{64}$'
+
+    ApprovalProofStatement:
+      title: ApprovalProofStatement
+      description: >-
+        Public Longfellow statement bound into the zero-knowledge proof.
+      type: object
+      additionalProperties: false
+      required:
+        - issuer_public_key_hex
+        - app_id_hash_hex
+        - policy_version
+        - now
+        - challenge_nonce_hex
+        - audience_hash_hex
+        - approval_hash_hex
+      properties:
+        issuer_public_key_hex:
+          type: string
+          description: >-
+            Lowercase hex-encoded compressed P-256 issuer public key (66 hex
+            chars, 33 bytes: `0x02`/`0x03` || X).
+          pattern: '^(02|03)[0-9a-f]{64}$'
+        app_id_hash_hex:
+          type: string
+          description: >-
+            Lowercase hex-encoded SHA-256 hash of the mobile app identifier.
+          pattern: '^[0-9a-f]{64}$'
+        policy_version:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Policy version embedded into the approval proof statement.
+        now:
+          type: integer
+          format: int64
+          description: >-
+            Unix timestamp in seconds embedded into the approval proof
+            statement.
+        challenge_nonce_hex:
+          type: string
+          description: Lowercase hex-encoded SHA-256 hash of `ApprovalChallenge.nonce`.
+          pattern: '^[0-9a-f]{64}$'
+        audience_hash_hex:
+          type: string
+          description: >-
+            Lowercase hex-encoded SHA-256 hash of the verifier audience
+            string.
+          pattern: '^[0-9a-f]{64}$'
+        approval_hash_hex:
+          type: string
+          description: >-
+            Lowercase hex-encoded SHA-256 hash of the canonical approval
+            challenge JSON.
+          pattern: '^[0-9a-f]{64}$'
+
+    ApprovalAttestationV1:
+      title: ApprovalAttestationV1
+      description: >-
+        Service-issued approval attestation embedded into the Longfellow proof
+        witness.
+      type: object
+      additionalProperties: false
+      required: [version, bytes, signature]
+      properties:
+        version:
+          type: string
+          enum: [approval-attestation/v1]
+          description: Canonical approval attestation format version.
+        bytes:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the
+            `approval-attestation/v1` bytes embedded into the Longfellow proof
+            witness.
+        signature:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the raw 64-byte
+            P-256 `r || s` signature over `SHA256(bytes)`.
+
+    ApprovalAttestedKeyProof:
+      title: ApprovalAttestedKeyProof
+      description: >-
+        Canonical Longfellow approval proof carried inside encrypted approval
+        responses.
+      type: object
+      additionalProperties: false
+      required: [version, challenge, statement, attestation, proof]
+      properties:
+        version:
+          type: string
+          enum: [approval-attested-key-proof/v1]
+          description: Canonical approval proof format version.
+        challenge:
+          $ref: '#/components/schemas/ApprovalChallenge'
+        statement:
+          $ref: '#/components/schemas/ApprovalProofStatement'
+        attestation:
+          $ref: '#/components/schemas/ApprovalAttestationV1'
+        proof:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the Longfellow
+            approval proof bytes.
+
+    # ---- Attestation metadata ---------------------------------------------
+
+    AttestationSecurityType:
+      title: AttestationSecurityType
+      description: Combined platform and security level for attestation.
+      type: string
+      enum:
+        - ios_secure_enclave
+        - android_tee
+        - android_strongbox
+        - software
+        - play_integrity
+
+    KeyMetadataAttestation:
+      title: KeyMetadataAttestation
+      description: >-
+        Attestation proof that a key was created on attested device hardware.
+      type: object
+      additionalProperties: false
+      required:
+        - public_key_hex
+        - assertion
+        - attestation_type
+        - challenge
+        - attestation_timestamp
+      properties:
+        public_key_hex:
+          type: string
+          description: >-
+            Lowercase hex-encoded public key being attested (66 hex chars for
+            P-256 33-byte compressed key, or 64 hex chars for Ed25519 32-byte
+            key).
+          pattern: '^[0-9a-f]{64}([0-9a-f]{2})?$'
+        assertion:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the App Attest
+            assertion or software signature.
+        attestation_type:
+          $ref: '#/components/schemas/AttestationSecurityType'
+        attestation_object:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for the Apple CBOR
+            attestation object used by hardware attestation.
+        challenge:
+          type: string
+          format: byte
+          description: >-
+            RFC 4648 standard base64 with `=` padding for
+            `SHA256(id || public_key || created_at || device_auth_public_key)`.
+        attestation_timestamp:
+          type: integer
+          format: int64
+          description: Unix timestamp in milliseconds.
+        attestation_public_key_hex:
+          type: string
+          description: >-
+            Lowercase hex-encoded attestation key public key (66 hex chars for
+            P-256 33-byte compressed key).
+          pattern: '^(02|03)[0-9a-f]{64}$'
+
+    # ---- Result-type enums ------------------------------------------------
+
+    SigningErrorCode:
+      title: SigningErrorCode
+      description: >-
+        Numeric error code returned in `*ResponsePayloadV1.error_code` when an
+        approval flow fails. `1=rejected`, `2=timeout`, `3=key_not_found`,
+        `4=invalid_payload`, `5=attestation_failed`, `6=internal_error`.
+      type: integer
+      enum: [1, 2, 3, 4, 5, 6]
+      example: 1
+
+    KeyPurpose:
+      title: KeyPurpose
+      description: Purpose of an enrolled key.
+      type: string
+      enum: [ssh, gpg, age]
+      example: ssh
+
+    # ---- Optional approval-UI display metadata ----------------------------
+
+    DisplayField:
+      title: DisplayField
+      description: A single label/value row rendered on the approval surface.
+      type: object
+      additionalProperties: false
+      required: [label, value]
+      properties:
+        label:
+          type: string
+          description: Short label for the field.
+          example: Repository
+        value:
+          type: string
+          description: Value to display.
+          example: github.com/user/repo
+        monospace:
+          type: boolean
+          description: Render the value in a monospace font.
+          default: false
+        expandable:
+          type: boolean
+          description: Field can be expanded to show additional content.
+          default: false
+        multiline:
+          type: boolean
+          description: Render the value across multiple lines.
+          default: false
+        sensitive:
+          type: boolean
+          description: Value contains sensitive information; UI may mask it.
+          default: false
+        icon:
+          type: string
+          description: Optional SF Symbol or Material icon name.
+
+    DisplaySchema:
+      title: DisplaySchema
+      description: >-
+        Optional approval-UI metadata. Producers populate this on a
+        best-effort basis; approvers MUST render the wire payload regardless
+        of presence.
+      type: object
+      additionalProperties: false
+      required: [title, fields]
+      properties:
+        title:
+          type: string
+          description: Main title for the approval screen.
+          example: Sign Git Commit
+        history_title:
+          type: string
+          description: Shorter title for the history list view.
+        subtitle:
+          type: string
+          description: Subtitle with additional context.
+        icon:
+          type: string
+          description: Optional icon name.
+        fields:
+          type: array
+          items:
+            $ref: '#/components/schemas/DisplayField'
+
+    # ---- Source / process context ----------------------------------------
+
+    ProcessEntry:
+      title: ProcessEntry
+      description: Entry in a process ancestry chain.
+      type: object
+      additionalProperties: false
+      required: [pid, username, command]
+      properties:
+        pid:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Process id.
+        username:
+          type: string
+          description: Username running the process.
+        command:
+          type: string
+          description: Command line of the process.
+
+    SourceInfo:
+      title: SourceInfo
+      description: >-
+        Optional context about the requesting system. Producers populate this
+        on a best-effort basis; approvers MUST NOT make security decisions on
+        unauthenticated source metadata.
+      type: object
+      additionalProperties: false
+      properties:
+        hostname:
+          type: string
+          description: Source machine hostname.
+        local_ip:
+          type: string
+          description: Local/private IP address.
+        username:
+          type: string
+          description: User running the requesting process.
+        command:
+          type: string
+          description: Command line of the current process.
+        process_chain:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProcessEntry'
+          description: Full process tree from the current process up to init.
