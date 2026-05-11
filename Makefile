@@ -164,24 +164,23 @@ $(TS_SRC_DIR)/index.ts: $(OPENAPI_BUNDLE)
 .PHONY: generate-check
 generate-check: generate
 	@echo "[generate-check] verifying no generator drift"
-	@# `git diff --quiet` ignores untracked files, so also check that the
-	@# tracked-paths working tree matches HEAD AND that no new untracked
-	@# files appeared under the generated paths. Both signals must stay
-	@# clean for the check to pass. Hand-written test files (e.g.
-	@# go/payloads_test.go, typescript/src/index.test.ts) intentionally
-	@# live next to the generated sources, so the path list targets only
-	@# the generator outputs.
+	@# Two signals, both must be clean:
+	@#   (1) Modifications to tracked generator outputs.
+	@#   (2) Untracked files under the generated directories that are
+	@#       NOT hand-written test files. Hand-written tests intentionally
+	@#       live next to generated sources (go/*_test.go,
+	@#       typescript/src/*.test.ts, swift/Tests/.../*Tests.swift), so
+	@#       the directory scan filters them out.
 	@dirty=$$(git status --porcelain -- \
 	    $(OPENAPI_DIR)/bundled \
-	    $(GO_GEN) \
-	    $(SWIFT_GEN_DIR)/Types.swift \
-	    $(SWIFT_GEN_OPENAPI) \
-	    $(SWIFT_GEN_CONFIG) \
-	    $(TS_SCHEMA) \
-	    $(TS_SRC_DIR)/index.ts \
-	    2>/dev/null); \
+	    $(GO_DIR) \
+	    $(SWIFT_GEN_DIR) \
+	    $(TS_SRC_DIR) \
+	    2>/dev/null \
+	    | grep -vE '(^.. )go/[^/]+_test\.go$$|(^.. )typescript/src/[^/]+\.test\.ts$$|(^.. )go/go\.(mod|sum)$$' \
+	    || true); \
 	if [ -n "$$dirty" ]; then \
-	    echo "generate-check: generated files are stale. Run 'make generate' and commit the result." >&2; \
+	    echo "generate-check: generator output is stale or unexpected. Run 'make generate' and commit the result." >&2; \
 	    printf '%s\n' "$$dirty"; \
 	    exit 1; \
 	fi

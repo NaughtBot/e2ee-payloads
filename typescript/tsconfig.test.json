@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // The smoke tests live next to the published sources; re-include
+    // them so `tsc --noEmit` validates the type contract a regression
+    // would otherwise erase under `node --test --experimental-strip-types`.
+    "noEmit": true
+  },
+  "include": ["src", "src/**/*.test.ts"],
+  "exclude": ["dist", "node_modules"]
+}

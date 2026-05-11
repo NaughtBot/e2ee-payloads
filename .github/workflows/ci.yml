@@ -13,7 +13,18 @@ jobs:
   # test runs on macOS below where the toolchain is pre-installed.
   lint-and-go-typescript:
     # arc-runners-naughtbot is the org-wide self-hosted Linux runner pool
-    # used by NaughtBot/{core, api}. CI is the only job that needs Linux.
+    # used by NaughtBot/{core, api}. Gate fork PRs out of the
+    # self-hosted pool to avoid giving untrusted contributors code
+    # execution on organization infrastructure: a fork PR opens, CI
+    # checks out the PR head ref, and `make` runs that ref's commands
+    # against the runner's filesystem and network. Push-to-main and
+    # same-repo PRs (lane branches, NaughtBot members) keep the
+    # self-hosted job; fork PRs are still validated by the macOS Swift
+    # job below since GitHub-hosted macOS runners do not have this
+    # exposure.
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: arc-runners-naughtbot
     steps:
       # Org policy requires every action be pinned to a full-length SHA;
@@ -42,15 +53,19 @@ jobs:
 
       - name: Verify Go / TypeScript / bundle drift
         # Skip the swift portion of generate-check on Linux — Swift drift
-        # is gated by the macOS swift job below.
+        # is gated by the macOS swift job below. Directory-level scan
+        # catches new untracked generator outputs; the grep filter
+        # excludes hand-written test files that intentionally live
+        # alongside generated sources.
         run: |
           make bundle generate-go generate-typescript
           dirty=$(git status --porcelain -- \
             openapi/bundled \
-            go/types.gen.go \
-            typescript/src/schema.ts \
-            typescript/src/index.ts \
-            2>/dev/null)
+            go \
+            typescript/src \
+            2>/dev/null \
+            | grep -vE '(^.. )go/[^/]+_test\.go$|(^.. )typescript/src/[^/]+\.test\.ts$|(^.. )go/go\.(mod|sum)$' \
+            || true)
           if [ -n "$dirty" ]; then
             echo "Generator drift detected. Run 'make generate' and commit the result." >&2
             printf '%s\n' "$dirty"
@@ -59,6 +74,24 @@ jobs:
 
       - name: Go test
         run: make test-go
+
+      - name: TypeScript build
+        # tsc -p tsconfig.json is the real type-check gate. node --test
+        # below runs with --experimental-strip-types which erases types
+        # without checking them, so a binding regression that makes a
+        # field optional or wrong-typed would still pass the runtime
+        # tests; this step is the compile-time backstop.
+        run: make build-typescript
+
+      - name: TypeScript typecheck smoke tests
+        # The default tsconfig excludes src/**/*.test.ts so the published
+        # package only ships type definitions for the runtime surface.
+        # `typecheck:tests` re-includes the smoke tests so a regression
+        # that weakens the contract (e.g. making `algorithm` optional in
+        # the GPG decrypt success branch) fails CI before the runtime
+        # tests, which run under --experimental-strip-types and erase
+        # types without checking them.
+        run: npm --prefix typescript run typecheck:tests
 
       - name: TypeScript test
         run: make test-typescript
@@ -71,14 +104,12 @@ jobs:
       - name: Verify Swift drift
         # The swift-openapi-generator binary is cached under
         # .swift-openapi-generator/. The first invocation clones and
-        # builds it; subsequent runs reuse the same binary.
+        # builds it; subsequent runs reuse the same binary. Scan the
+        # whole generated directory so a new untracked generator output
+        # also fails the gate.
         run: |
           make generate-swift
-          dirty=$(git status --porcelain -- \
-            swift/Sources/NaughtBotE2EEPayloads/Types.swift \
-            swift/Sources/NaughtBotE2EEPayloads/openapi.yaml \
-            swift/Sources/NaughtBotE2EEPayloads/openapi-generator-config.yaml \
-            2>/dev/null)
+          dirty=$(git status --porcelain -- swift/Sources/NaughtBotE2EEPayloads 2>/dev/null)
           if [ -n "$dirty" ]; then
             echo "Swift generator drift detected. Run 'make generate-swift' and commit the result." >&2
             printf '%s\n' "$dirty"
