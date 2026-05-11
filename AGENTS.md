@@ -11,9 +11,15 @@ here and not in `NaughtBot/core`.
 - `openapi/` — hand-edited OpenAPI 3.0.3 sources, the only authored artefacts.
   - `openapi/envelope.yaml` — `MailboxEnvelopeV1` plus the `MailboxEnvelopeType`
     registry enum.
-  - `openapi/payloads/<surface>.yaml` — per-surface payload schemas
-    (`ssh.yaml`, `gpg.yaml`, `age.yaml`, `pkcs11.yaml`, `enroll.yaml` once
-    WS1.2 lands).
+  - `openapi/payloads/common.yaml` — shared building blocks (approval
+    challenge / proof chain, attestation metadata, signing error codes,
+    optional display + source-info metadata).
+  - `openapi/payloads/<surface>.yaml` — per-surface payload schemas:
+    `ssh.yaml`, `gpg.yaml`, `age.yaml`, `pkcs11.yaml`, `enroll.yaml`.
+  - `openapi/payloads.yaml` — bundle root that re-exports every
+    component schema; `make bundle` flattens it into
+    `openapi/bundled/payloads.yaml` for the generators.
+  - `openapi/redocly.yaml` — Redocly lint config.
 - `go/` — generated Go package, module `github.com/naughtbot/e2ee-payloads/go`.
 - `swift/Sources/NaughtBotE2EEPayloads/` — generated Swift module surfaced
   through the root `Package.swift` so SwiftPM consumers can depend on this
@@ -147,15 +153,47 @@ GitHub release creation). Pushing the tag is the entire release surface.
 Go consumers import from `github.com/naughtbot/e2ee-payloads/go` and
 pin via `go get github.com/naughtbot/e2ee-payloads/go@v<ver>`. SwiftPM
 consumers depend on `https://github.com/NaughtBot/e2ee-payloads.git`
-and pin via `from: "<ver>"`. npm consumers install
-`@naughtbot/e2ee-payloads@<ver>`.
+and pin via `from: "<ver>"` (against the top-level `v<ver>` semver
+tag — SwiftPM does not resolve against the `swift/v<ver>` subdir
+marker). npm consumers install `@naughtbot/e2ee-payloads@<ver>`.
+
+## Known debt
+
+The five existing v1 envelope types — `link_request`, `link_approval`,
+`link_rejection`, `captcha_request`, `captcha_response` — currently
+live in `NaughtBot/core` `openapi/shared.yaml`. Migrating them out of
+core into this repo is a coordinated follow-up that touches `mobile/`,
+`captcha/`, and `core/` simultaneously and is tracked separately under
+the master plan
+[`NaughtBot/workspace#3`](https://github.com/NaughtBot/workspace/issues/3).
+For the v0.1.x series this repo carries the eight new signing /
+decryption / derive / enroll envelope types only; the existing five
+identifiers appear in the `MailboxEnvelopeType` registry enum in
+`openapi/envelope.yaml` so receivers can validate against the canonical
+registry, but their payload schemas still live in core. Do not add
+hand-written mirror schemas for them here — wait for the migration
+follow-up.
+
+## References
+
+- Master tracker: [`NaughtBot/workspace#3`](https://github.com/NaughtBot/workspace/issues/3).
+- Detailed bootstrap plan:
+  [`workspace/plans/2026-05-11-0208Z-e2ee-payloads-bootstrap.md`](https://github.com/NaughtBot/workspace/blob/main/plans/2026-05-11-0208Z-e2ee-payloads-bootstrap.md).
+- Cross-repo coordinator plan:
+  [`workspace/plans/2026-05-11-0208Z-signing-types-cli-extraction.md`](https://github.com/NaughtBot/workspace/blob/main/plans/2026-05-11-0208Z-signing-types-cli-extraction.md).
 
 ## Testing Guidelines
 
-Bug fixes must include a regression test. Generator regressions belong as
-unit tests near the binding under test (Go `*_test.go`, Swift `swift-testing`
-or XCTest, TypeScript `*.test.ts`). Schema-shape changes must include a
-JSON round-trip test in at least one binding.
+Bug fixes must include a regression test (workspace rule). Generator
+regressions belong as unit tests near the binding under test (Go
+`*_test.go`, Swift `swift-testing`, TypeScript `*.test.ts`). Schema-shape
+changes must include a JSON round-trip test in at least one binding.
+
+The smoke tests under `go/payloads_test.go`,
+`swift/Tests/NaughtBotE2EEPayloadsTests/PayloadsTests.swift`, and
+`typescript/src/index.test.ts` cover one schema per surface plus the
+documented generator caveats; expand them when adding a new payload
+surface.
 
 ## Commit & Pull Request Guidelines
 
