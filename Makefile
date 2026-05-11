@@ -166,10 +166,20 @@ generate-check: generate
 	@echo "[generate-check] verifying no generator drift"
 	@# `git diff --quiet` ignores untracked files, so also check that the
 	@# tracked-paths working tree matches HEAD AND that no new untracked
-	@# files appeared under the generated directories. Both signals must
-	@# stay clean for the check to pass.
+	@# files appeared under the generated paths. Both signals must stay
+	@# clean for the check to pass. Hand-written test files (e.g.
+	@# go/payloads_test.go, typescript/src/index.test.ts) intentionally
+	@# live next to the generated sources, so the path list targets only
+	@# the generator outputs.
 	@dirty=$$(git status --porcelain -- \
-	    $(OPENAPI_DIR)/bundled $(GO_DIR) $(SWIFT_GEN_DIR) $(TS_SRC_DIR) 2>/dev/null); \
+	    $(OPENAPI_DIR)/bundled \
+	    $(GO_GEN) \
+	    $(SWIFT_GEN_DIR)/Types.swift \
+	    $(SWIFT_GEN_OPENAPI) \
+	    $(SWIFT_GEN_CONFIG) \
+	    $(TS_SCHEMA) \
+	    $(TS_SRC_DIR)/index.ts \
+	    2>/dev/null); \
 	if [ -n "$$dirty" ]; then \
 	    echo "generate-check: generated files are stale. Run 'make generate' and commit the result." >&2; \
 	    printf '%s\n' "$$dirty"; \

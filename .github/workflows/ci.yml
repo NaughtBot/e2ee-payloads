@@ -1,0 +1,90 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # OpenAPI lint + Go / TypeScript drift / test on Linux. Swift drift +
+  # test runs on macOS below where the toolchain is pre-installed.
+  lint-and-go-typescript:
+    # arc-runners-naughtbot is the org-wide self-hosted Linux runner pool
+    # used by NaughtBot/{core, api}. CI is the only job that needs Linux.
+    runs-on: arc-runners-naughtbot
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+          cache: true
+          cache-dependency-path: go/go.sum
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: typescript/package-lock.json
+
+      - name: Lint OpenAPI sources
+        run: make openapi-lint
+
+      - name: Install TypeScript deps
+        run: npm --prefix typescript ci
+
+      - name: Verify Go / TypeScript / bundle drift
+        # Skip the swift portion of generate-check on Linux — Swift drift
+        # is gated by the macOS swift job below.
+        run: |
+          make bundle generate-go generate-typescript
+          dirty=$(git status --porcelain -- \
+            openapi/bundled \
+            go/types.gen.go \
+            typescript/src/schema.ts \
+            typescript/src/index.ts \
+            2>/dev/null)
+          if [ -n "$dirty" ]; then
+            echo "Generator drift detected. Run 'make generate' and commit the result." >&2
+            printf '%s\n' "$dirty"
+            exit 1
+          fi
+
+      - name: Go test
+        run: make test-go
+
+      - name: TypeScript test
+        run: make test-typescript
+
+  swift:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify Swift drift
+        # The swift-openapi-generator binary is cached under
+        # .swift-openapi-generator/. The first invocation clones and
+        # builds it; subsequent runs reuse the same binary.
+        run: |
+          make generate-swift
+          dirty=$(git status --porcelain -- \
+            swift/Sources/NaughtBotE2EEPayloads/Types.swift \
+            swift/Sources/NaughtBotE2EEPayloads/openapi.yaml \
+            swift/Sources/NaughtBotE2EEPayloads/openapi-generator-config.yaml \
+            2>/dev/null)
+          if [ -n "$dirty" ]; then
+            echo "Swift generator drift detected. Run 'make generate-swift' and commit the result." >&2
+            printf '%s\n' "$dirty"
+            exit 1
+          fi
+
+      - name: Swift build
+        run: swift build
+
+      - name: Swift test
+        run: swift test
