@@ -1,0 +1,40 @@
+// This file is auto-generated alongside schema.ts. Do not edit by hand.
+// Adding a new schema requires re-running `make generate-typescript`.
+export type { components, paths, webhooks } from "./schema.js";
+
+import type { components } from "./schema.js";
+
+export type MailboxEnvelopeV1 = components["schemas"]["MailboxEnvelopeV1"];
+export type MailboxEnvelopeType = components["schemas"]["MailboxEnvelopeType"];
+export type MailboxSshAuthRequestPayloadV1 = components["schemas"]["MailboxSshAuthRequestPayloadV1"];
+export type MailboxSshAuthResponsePayloadV1 = components["schemas"]["MailboxSshAuthResponsePayloadV1"];
+export type MailboxSshAuthResponseSuccessV1 = components["schemas"]["MailboxSshAuthResponseSuccessV1"];
+export type MailboxSshAuthResponseFailureV1 = components["schemas"]["MailboxSshAuthResponseFailureV1"];
+export type MailboxSshSignRequestPayloadV1 = components["schemas"]["MailboxSshSignRequestPayloadV1"];
+export type MailboxSshSignResponsePayloadV1 = components["schemas"]["MailboxSshSignResponsePayloadV1"];
+export type MailboxSshSignResponseSuccessV1 = components["schemas"]["MailboxSshSignResponseSuccessV1"];
+export type MailboxSshSignResponseFailureV1 = components["schemas"]["MailboxSshSignResponseFailureV1"];
+export type MailboxGpgSignRequestPayloadV1 = components["schemas"]["MailboxGpgSignRequestPayloadV1"];
+export type MailboxGpgSignResponsePayloadV1 = components["schemas"]["MailboxGpgSignResponsePayloadV1"];
+export type MailboxGpgSignResponseSuccessV1 = components["schemas"]["MailboxGpgSignResponseSuccessV1"];
+export type MailboxGpgSignResponseFailureV1 = components["schemas"]["MailboxGpgSignResponseFailureV1"];
+export type MailboxGpgDecryptRequestPayloadV1 = components["schemas"]["MailboxGpgDecryptRequestPayloadV1"];
+export type MailboxGpgDecryptResponsePayloadV1 = components["schemas"]["MailboxGpgDecryptResponsePayloadV1"];
+export type MailboxGpgDecryptResponseSuccessV1 = components["schemas"]["MailboxGpgDecryptResponseSuccessV1"];
+export type MailboxGpgDecryptResponseFailureV1 = components["schemas"]["MailboxGpgDecryptResponseFailureV1"];
+export type MailboxAgeUnwrapRequestPayloadV1 = components["schemas"]["MailboxAgeUnwrapRequestPayloadV1"];
+export type MailboxAgeUnwrapResponsePayloadV1 = components["schemas"]["MailboxAgeUnwrapResponsePayloadV1"];
+export type MailboxAgeUnwrapResponseSuccessV1 = components["schemas"]["MailboxAgeUnwrapResponseSuccessV1"];
+export type MailboxAgeUnwrapResponseFailureV1 = components["schemas"]["MailboxAgeUnwrapResponseFailureV1"];
+export type MailboxPkcs11SignRequestPayloadV1 = components["schemas"]["MailboxPkcs11SignRequestPayloadV1"];
+export type MailboxPkcs11SignResponsePayloadV1 = components["schemas"]["MailboxPkcs11SignResponsePayloadV1"];
+export type MailboxPkcs11SignResponseSuccessV1 = components["schemas"]["MailboxPkcs11SignResponseSuccessV1"];
+export type MailboxPkcs11SignResponseFailureV1 = components["schemas"]["MailboxPkcs11SignResponseFailureV1"];
+export type MailboxPkcs11DeriveRequestPayloadV1 = components["schemas"]["MailboxPkcs11DeriveRequestPayloadV1"];
+export type MailboxPkcs11DeriveResponsePayloadV1 = components["schemas"]["MailboxPkcs11DeriveResponsePayloadV1"];
+export type MailboxPkcs11DeriveResponseSuccessV1 = components["schemas"]["MailboxPkcs11DeriveResponseSuccessV1"];
+export type MailboxPkcs11DeriveResponseFailureV1 = components["schemas"]["MailboxPkcs11DeriveResponseFailureV1"];
+export type MailboxEnrollRequestPayloadV1 = components["schemas"]["MailboxEnrollRequestPayloadV1"];
+export type MailboxEnrollResponsePayloadV1 = components["schemas"]["MailboxEnrollResponsePayloadV1"];
+export type MailboxEnrollResponseApprovedV1 = components["schemas"]["MailboxEnrollResponseApprovedV1"];
+export type MailboxEnrollResponseRejectedV1 = components["schemas"]["MailboxEnrollResponseRejectedV1"];
