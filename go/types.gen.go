@@ -479,6 +479,9 @@ type MailboxEnrollResponseApprovedV1 struct {
 	// PublicKeyHex Lowercase hex-encoded public key. 66 hex chars for P-256 33-byte compressed key, or 64 hex chars for Ed25519 32-byte key.
 	PublicKeyHex string `json:"public_key_hex"`
 
+	// SshSkFlags Per-credential SSH-SK flags byte the approver baked into a newly enrolled SSH security-key credential. Only meaningful when `purpose` is the SSH signing purpose; absent for all other key purposes. The requester MUST persist this value alongside the credential public key and embed it (unchanged) in the OpenSSH SK signature preimage on every subsequent `ssh_auth` / `ssh_sign` verification: `SHA256(application) || flags || counter || SHA256(data)`. Bit `0x01` is "user presence required" and `0x04` is "user verification required" per the OpenSSH SK protocol.
+	SshSkFlags *int `json:"ssh_sk_flags,omitempty"`
+
 	// Status Enrollment outcome discriminator (`approved`).
 	Status MailboxEnrollResponseApprovedV1Status `json:"status"`
 
@@ -750,10 +753,13 @@ type MailboxSshAuthResponsePayloadV1 struct {
 	union json.RawMessage
 }
 
-// MailboxSshAuthResponseSuccessV1 Success branch of `MailboxSshAuthResponsePayloadV1`.
+// MailboxSshAuthResponseSuccessV1 Success branch of `MailboxSshAuthResponsePayloadV1`. Carries the raw SSH signature plus the SK monotonic counter the signer's secure element returned for this signing operation; both are required so the requester can rebuild the OpenSSH SK signature preimage (`SHA256(application) || flags || counter || SHA256(data)`) and verify against the enrolled credential public key.
 type MailboxSshAuthResponseSuccessV1 struct {
 	// ApprovalProof Canonical Longfellow approval proof carried inside encrypted approval responses.
 	ApprovalProof *ApprovalAttestedKeyProof `json:"approval_proof,omitempty"`
+
+	// Counter Monotonic counter the signer's secure element returned for this SK signing operation. Receivers MUST embed this in the OpenSSH SK signature preimage at the position between `flags` and `SHA256(data)`. Successive signatures from the same key handle MUST have strictly increasing counter values.
+	Counter int `json:"counter"`
 
 	// Signature RFC 4648 standard base64 with `=` padding for the raw SSH signature blob (no SSH-wire framing).
 	Signature []byte `json:"signature"`
@@ -800,10 +806,13 @@ type MailboxSshSignResponsePayloadV1 struct {
 	union json.RawMessage
 }
 
-// MailboxSshSignResponseSuccessV1 Success branch of `MailboxSshSignResponsePayloadV1`.
+// MailboxSshSignResponseSuccessV1 Success branch of `MailboxSshSignResponsePayloadV1`. Carries the raw SSH signature plus the SK monotonic counter the signer's secure element returned for this signing operation; both are required so the requester can rebuild the OpenSSH SK signature preimage (`SHA256(application) || flags || counter || SHA256(data)`) and verify against the enrolled credential public key.
 type MailboxSshSignResponseSuccessV1 struct {
 	// ApprovalProof Canonical Longfellow approval proof carried inside encrypted approval responses.
 	ApprovalProof *ApprovalAttestedKeyProof `json:"approval_proof,omitempty"`
+
+	// Counter Monotonic counter the signer's secure element returned for this SK signing operation. Receivers MUST embed this in the OpenSSH SK signature preimage at the position between `flags` and `SHA256(data)`. Successive signatures from the same key handle MUST have strictly increasing counter values.
+	Counter int `json:"counter"`
 
 	// Signature RFC 4648 standard base64 with `=` padding for the raw SSH signature blob (no SSH-wire framing).
 	Signature []byte `json:"signature"`

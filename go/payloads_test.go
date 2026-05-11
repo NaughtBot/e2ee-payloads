@@ -133,7 +133,7 @@ func TestSshSignRequestRoundTrip(t *testing.T) {
 func TestSshAuthResponseSuccessRouting(t *testing.T) {
 	t.Parallel()
 
-	const successJSON = `{"signature":"YWJj"}`
+	const successJSON = `{"signature":"YWJj","counter":7}`
 	var resp MailboxSshAuthResponsePayloadV1
 	if err := json.Unmarshal([]byte(successJSON), &resp); err != nil {
 		t.Fatalf("unmarshal success: %v", err)
@@ -144,6 +144,9 @@ func TestSshAuthResponseSuccessRouting(t *testing.T) {
 	}
 	if len(success.Signature) == 0 {
 		t.Errorf("Signature must be set on success branch")
+	}
+	if success.Counter != 7 {
+		t.Errorf("Counter = %d, want 7", success.Counter)
 	}
 
 	const failureJSON = `{"error_code":1,"error_message":"User rejected"}`
@@ -170,6 +173,126 @@ func TestSshAuthResponseSuccessRouting(t *testing.T) {
 	}
 }
 
+// TestSshAuthResponseSuccessCounterRoundTrip is a regression test for
+// NaughtBot/e2ee-payloads#17: the SK monotonic counter must survive a
+// JSON encode/decode round-trip on the SSH auth success branch. Without
+// this field the requester cannot rebuild the OpenSSH SK signature
+// preimage `SHA256(application) || flags || counter || SHA256(data)`.
+func TestSshAuthResponseSuccessCounterRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	in := MailboxSshAuthResponseSuccessV1{
+		Signature: []byte("ssh-sk-sig"),
+		Counter:   7,
+	}
+	out, err := json.Marshal(in)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if !strings.Contains(string(out), `"counter":7`) {
+		t.Errorf("expected counter in %s", out)
+	}
+
+	var rt MailboxSshAuthResponseSuccessV1
+	if err := json.Unmarshal(out, &rt); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if rt.Counter != 7 {
+		t.Errorf("Counter = %d, want 7", rt.Counter)
+	}
+	if string(rt.Signature) != "ssh-sk-sig" {
+		t.Errorf("Signature lost: %q", rt.Signature)
+	}
+
+	// Boundary: u32 max counter value must round-trip without overflow.
+	in.Counter = 4294967295
+	out, err = json.Marshal(in)
+	if err != nil {
+		t.Fatalf("marshal max counter: %v", err)
+	}
+	var maxRT MailboxSshAuthResponseSuccessV1
+	if err := json.Unmarshal(out, &maxRT); err != nil {
+		t.Fatalf("unmarshal max counter: %v", err)
+	}
+	if maxRT.Counter != 4294967295 {
+		t.Errorf("max Counter lost: got %d want 4294967295", maxRT.Counter)
+	}
+}
+
+// TestSshSignResponseSuccessCounterRoundTrip is the matching regression
+// test for the `ssh_sign` (e.g. SSH commit-signing) response branch, which
+// shares the same SK preimage construction as `ssh_auth`.
+func TestSshSignResponseSuccessCounterRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	in := MailboxSshSignResponseSuccessV1{
+		Signature: []byte("ssh-sk-sig"),
+		Counter:   42,
+	}
+	out, err := json.Marshal(in)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if !strings.Contains(string(out), `"counter":42`) {
+		t.Errorf("expected counter in %s", out)
+	}
+
+	var rt MailboxSshSignResponseSuccessV1
+	if err := json.Unmarshal(out, &rt); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if rt.Counter != 42 {
+		t.Errorf("Counter = %d, want 42", rt.Counter)
+	}
+}
+
+// TestEnrollResponseApprovedSshSkFlagsRoundTrip is the regression test for
+// the per-credential `ssh_sk_flags` byte added in v0.2.0. The requester
+// MUST persist this value alongside the credential public key and embed
+// it into the OpenSSH SK signature preimage on every subsequent
+// `ssh_auth` / `ssh_sign` verification.
+func TestEnrollResponseApprovedSshSkFlagsRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	flags := 5 // 0x05 = user presence + user verification
+	in := MailboxEnrollResponseApprovedV1{
+		Status:       Approved,
+		Id:           "550e8400-e29b-41d4-a716-446655440000",
+		PublicKeyHex: "02a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+		DeviceKeyId:  "dev-1",
+		Algorithm:    "ed25519",
+		SshSkFlags:   &flags,
+	}
+	out, err := json.Marshal(in)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	if !strings.Contains(string(out), `"ssh_sk_flags":5`) {
+		t.Errorf("expected snake_case ssh_sk_flags in %s", out)
+	}
+
+	var rt MailboxEnrollResponseApprovedV1
+	if err := json.Unmarshal(out, &rt); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if rt.SshSkFlags == nil {
+		t.Fatalf("SshSkFlags lost on round-trip")
+	}
+	if *rt.SshSkFlags != 5 {
+		t.Errorf("SshSkFlags = %d, want 5", *rt.SshSkFlags)
+	}
+
+	// Non-SSH enrollments omit the field entirely; verify nil round-trips.
+	in.SshSkFlags = nil
+	out, err = json.Marshal(in)
+	if err != nil {
+		t.Fatalf("marshal without ssh_sk_flags: %v", err)
+	}
+	if strings.Contains(string(out), `"ssh_sk_flags"`) {
+		t.Errorf("ssh_sk_flags must be omitempty when absent: %s", out)
+	}
+}
+
 // TestEnrollResponseDiscriminator exercises the discriminator-based
 // routing for the enroll response. Unlike the SSH/GPG/age/PKCS#11
 // responses, enroll uses an explicit `status` discriminator, so callers
@@ -183,7 +306,8 @@ func TestEnrollResponseDiscriminator(t *testing.T) {
 		"id": "550e8400-e29b-41d4-a716-446655440000",
 		"public_key_hex": "02a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
 		"device_key_id": "dev-1",
-		"algorithm": "ed25519"
+		"algorithm": "ed25519",
+		"ssh_sk_flags": 1
 	}`
 	var resp MailboxEnrollResponsePayloadV1
 	if err := json.Unmarshal([]byte(approvedJSON), &resp); err != nil {
@@ -202,6 +326,9 @@ func TestEnrollResponseDiscriminator(t *testing.T) {
 	}
 	if approved.Algorithm != "ed25519" {
 		t.Errorf("Algorithm = %q, want ed25519", approved.Algorithm)
+	}
+	if approved.SshSkFlags == nil || *approved.SshSkFlags != 1 {
+		t.Errorf("SshSkFlags = %v, want *int=1", approved.SshSkFlags)
 	}
 }
 

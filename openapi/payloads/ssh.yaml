@@ -7,7 +7,7 @@ info:
     or `MailboxSshSignRequestPayloadV1` as the envelope `payload` and ships it
     via HPKE plaintext. The approver returns the matching response payload
     inside the encrypted response envelope.
-  version: 0.1.0
+  version: 0.2.0
   license:
     name: MIT
 paths: {}
@@ -75,10 +75,16 @@ components:
 
     MailboxSshAuthResponseSuccessV1:
       title: MailboxSshAuthResponseSuccessV1
-      description: Success branch of `MailboxSshAuthResponsePayloadV1`.
+      description: >-
+        Success branch of `MailboxSshAuthResponsePayloadV1`. Carries the raw
+        SSH signature plus the SK monotonic counter the signer's secure
+        element returned for this signing operation; both are required so
+        the requester can rebuild the OpenSSH SK signature preimage
+        (`SHA256(application) || flags || counter || SHA256(data)`) and
+        verify against the enrolled credential public key.
       type: object
       additionalProperties: false
-      required: [signature]
+      required: [signature, counter]
       properties:
         signature:
           type: string
@@ -86,6 +92,17 @@ components:
           description: >-
             RFC 4648 standard base64 with `=` padding for the raw SSH
             signature blob (no SSH-wire framing).
+        counter:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: >-
+            Monotonic counter the signer's secure element returned for this
+            SK signing operation. Receivers MUST embed this in the OpenSSH SK
+            signature preimage at the position between `flags` and
+            `SHA256(data)`. Successive signatures from the same key handle
+            MUST have strictly increasing counter values.
+          example: 1
         approval_proof:
           $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
 
@@ -163,10 +180,16 @@ components:
 
     MailboxSshSignResponseSuccessV1:
       title: MailboxSshSignResponseSuccessV1
-      description: Success branch of `MailboxSshSignResponsePayloadV1`.
+      description: >-
+        Success branch of `MailboxSshSignResponsePayloadV1`. Carries the raw
+        SSH signature plus the SK monotonic counter the signer's secure
+        element returned for this signing operation; both are required so
+        the requester can rebuild the OpenSSH SK signature preimage
+        (`SHA256(application) || flags || counter || SHA256(data)`) and
+        verify against the enrolled credential public key.
       type: object
       additionalProperties: false
-      required: [signature]
+      required: [signature, counter]
       properties:
         signature:
           type: string
@@ -174,6 +197,17 @@ components:
           description: >-
             RFC 4648 standard base64 with `=` padding for the raw SSH
             signature blob (no SSH-wire framing).
+        counter:
+          type: integer
+          minimum: 0
+          maximum: 4294967295
+          description: >-
+            Monotonic counter the signer's secure element returned for this
+            SK signing operation. Receivers MUST embed this in the OpenSSH SK
+            signature preimage at the position between `flags` and
+            `SHA256(data)`. Successive signatures from the same key handle
+            MUST have strictly increasing counter values.
+          example: 1
         approval_proof:
           $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
 

@@ -6,11 +6,14 @@ import { describe, it } from "node:test";
 
 import type {
   MailboxAgeUnwrapRequestPayloadV1,
+  MailboxEnrollResponseApprovedV1,
   MailboxEnrollResponsePayloadV1,
   MailboxEnvelopeV1,
   MailboxGpgDecryptResponseSuccessV1,
+  MailboxSshAuthResponseSuccessV1,
   MailboxSshSignRequestPayloadV1,
   MailboxSshSignResponsePayloadV1,
+  MailboxSshSignResponseSuccessV1,
 } from "./index.ts";
 
 describe("MailboxEnvelopeV1", () => {
@@ -62,9 +65,10 @@ describe("MailboxSshSignRequestPayloadV1", () => {
 
 describe("MailboxSshSignResponsePayloadV1", () => {
   it("decodes success branch by structural narrowing", () => {
-    const json = '{"signature":"YWJj"}';
+    const json = '{"signature":"YWJj","counter":7}';
     const resp = JSON.parse(json) as MailboxSshSignResponsePayloadV1;
     assert.ok("signature" in resp && resp.signature !== undefined);
+    assert.ok("counter" in resp && resp.counter === 7);
     assert.ok(!("error_code" in resp) || resp.error_code === undefined);
   });
 
@@ -72,6 +76,45 @@ describe("MailboxSshSignResponsePayloadV1", () => {
     const json = '{"error_code":1,"error_message":"User rejected"}';
     const resp = JSON.parse(json) as MailboxSshSignResponsePayloadV1;
     assert.ok("error_code" in resp && resp.error_code === 1);
+  });
+});
+
+// Regression test for NaughtBot/e2ee-payloads#17. The SK monotonic counter
+// is now required on both `ssh_auth` and `ssh_sign` success branches. The
+// compile-time bindings below also pin that `counter` is required (a
+// regression that makes it optional turns this file into a `tsc` error).
+describe("SSH-SK counter (issue #17)", () => {
+  it("requires counter on MailboxSshAuthResponseSuccessV1", () => {
+    const success: MailboxSshAuthResponseSuccessV1 = {
+      signature: "YWJj",
+      counter: 7,
+    };
+    const parsed = JSON.parse(
+      JSON.stringify(success),
+    ) as MailboxSshAuthResponseSuccessV1;
+    assert.equal(parsed.counter, 7);
+    assert.equal(parsed.signature, "YWJj");
+
+    // u32 max boundary value round-trips without overflow.
+    const maxCounter: MailboxSshAuthResponseSuccessV1 = {
+      signature: "YWJj",
+      counter: 4294967295,
+    };
+    const parsedMax = JSON.parse(
+      JSON.stringify(maxCounter),
+    ) as MailboxSshAuthResponseSuccessV1;
+    assert.equal(parsedMax.counter, 4294967295);
+  });
+
+  it("requires counter on MailboxSshSignResponseSuccessV1", () => {
+    const success: MailboxSshSignResponseSuccessV1 = {
+      signature: "YWJj",
+      counter: 42,
+    };
+    const parsed = JSON.parse(
+      JSON.stringify(success),
+    ) as MailboxSshSignResponseSuccessV1;
+    assert.equal(parsed.counter, 42);
   });
 });
 
@@ -132,5 +175,38 @@ describe("MailboxEnrollResponsePayloadV1", () => {
     if (rejected.status === "rejected") {
       assert.equal(rejected.error_code, 1);
     }
+  });
+
+  // Regression test for NaughtBot/e2ee-payloads#17. The per-credential
+  // SSH-SK flags byte must be carried back to the requester on approved
+  // SSH-SK enrollments so the requester can rebuild the OpenSSH SK
+  // signature preimage on every subsequent `ssh_auth` / `ssh_sign` call.
+  it("round-trips per-credential ssh_sk_flags on SSH-SK enrollments", () => {
+    const approved: MailboxEnrollResponseApprovedV1 = {
+      status: "approved",
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      public_key_hex:
+        "02a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+      device_key_id: "dev-1",
+      algorithm: "ed25519",
+      ssh_sk_flags: 5, // 0x05 = user presence + user verification
+    };
+    const json = JSON.stringify(approved);
+    assert.ok(json.includes('"ssh_sk_flags":5'));
+    const parsed = JSON.parse(json) as MailboxEnrollResponseApprovedV1;
+    assert.equal(parsed.ssh_sk_flags, 5);
+
+    // Non-SSH enrollments omit the field; verify the surface stays
+    // optional (a regression that makes it required turns this into a
+    // `tsc` error rather than a silent on-the-wire change).
+    const noFlags: MailboxEnrollResponseApprovedV1 = {
+      status: "approved",
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      public_key_hex:
+        "02a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+      device_key_id: "dev-1",
+      algorithm: "ed25519",
+    };
+    assert.ok(!JSON.stringify(noFlags).includes("ssh_sk_flags"));
   });
 });

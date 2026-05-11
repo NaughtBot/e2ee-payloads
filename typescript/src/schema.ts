@@ -306,7 +306,7 @@ export interface components {
         MailboxSshAuthResponsePayloadV1: components["schemas"]["MailboxSshAuthResponseSuccessV1"] | components["schemas"]["MailboxSshAuthResponseFailureV1"];
         /**
          * MailboxSshAuthResponseSuccessV1
-         * @description Success branch of `MailboxSshAuthResponsePayloadV1`.
+         * @description Success branch of `MailboxSshAuthResponsePayloadV1`. Carries the raw SSH signature plus the SK monotonic counter the signer's secure element returned for this signing operation; both are required so the requester can rebuild the OpenSSH SK signature preimage (`SHA256(application) || flags || counter || SHA256(data)`) and verify against the enrolled credential public key.
          */
         MailboxSshAuthResponseSuccessV1: {
             /**
@@ -314,6 +314,11 @@ export interface components {
              * @description RFC 4648 standard base64 with `=` padding for the raw SSH signature blob (no SSH-wire framing).
              */
             signature: string;
+            /**
+             * @description Monotonic counter the signer's secure element returned for this SK signing operation. Receivers MUST embed this in the OpenSSH SK signature preimage at the position between `flags` and `SHA256(data)`. Successive signatures from the same key handle MUST have strictly increasing counter values.
+             * @example 1
+             */
+            counter: number;
             approval_proof?: components["schemas"]["ApprovalAttestedKeyProof"];
         };
         /**
@@ -369,7 +374,7 @@ export interface components {
         MailboxSshSignResponsePayloadV1: components["schemas"]["MailboxSshSignResponseSuccessV1"] | components["schemas"]["MailboxSshSignResponseFailureV1"];
         /**
          * MailboxSshSignResponseSuccessV1
-         * @description Success branch of `MailboxSshSignResponsePayloadV1`.
+         * @description Success branch of `MailboxSshSignResponsePayloadV1`. Carries the raw SSH signature plus the SK monotonic counter the signer's secure element returned for this signing operation; both are required so the requester can rebuild the OpenSSH SK signature preimage (`SHA256(application) || flags || counter || SHA256(data)`) and verify against the enrolled credential public key.
          */
         MailboxSshSignResponseSuccessV1: {
             /**
@@ -377,6 +382,11 @@ export interface components {
              * @description RFC 4648 standard base64 with `=` padding for the raw SSH signature blob (no SSH-wire framing).
              */
             signature: string;
+            /**
+             * @description Monotonic counter the signer's secure element returned for this SK signing operation. Receivers MUST embed this in the OpenSSH SK signature preimage at the position between `flags` and `SHA256(data)`. Successive signatures from the same key handle MUST have strictly increasing counter values.
+             * @example 1
+             */
+            counter: number;
             approval_proof?: components["schemas"]["ApprovalAttestedKeyProof"];
         };
         /**
@@ -779,6 +789,11 @@ export interface components {
             encryption_public_key_hex?: string;
             /** @description 40-character hex fingerprint of the ECDH encryption subkey. */
             encryption_fingerprint?: string;
+            /**
+             * @description Per-credential SSH-SK flags byte the approver baked into a newly enrolled SSH security-key credential. Only meaningful when `purpose` is the SSH signing purpose; absent for all other key purposes. The requester MUST persist this value alongside the credential public key and embed it (unchanged) in the OpenSSH SK signature preimage on every subsequent `ssh_auth` / `ssh_sign` verification: `SHA256(application) || flags || counter || SHA256(data)`. Bit `0x01` is "user presence required" and `0x04` is "user verification required" per the OpenSSH SK protocol.
+             * @example 1
+             */
+            ssh_sk_flags?: number;
             attestation?: components["schemas"]["KeyMetadataAttestation"];
             approval_proof?: components["schemas"]["ApprovalAttestedKeyProof"];
         };
