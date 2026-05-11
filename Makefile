@@ -104,13 +104,68 @@ generate-typescript: bundle
 	@mkdir -p $(TS_SRC_DIR)
 	@cd $(TS_DIR) && $(NPM) install --silent --no-audit --no-fund --prefer-offline >/dev/null
 	@$(TS_DIR)/node_modules/.bin/openapi-typescript $(OPENAPI_BUNDLE) --output $(TS_SCHEMA)
+	@$(MAKE) --no-print-directory $(TS_SRC_DIR)/index.ts
+
+# Re-export aliases authored alongside the generator: re-running `make
+# generate-typescript` recreates them so consumers always import a stable
+# surface from `@naughtbot/e2ee-payloads`.
+$(TS_SRC_DIR)/index.ts: $(OPENAPI_BUNDLE)
+	@echo "[generate-typescript] writing $@"
+	@printf '%s\n' \
+	    '// This file is auto-generated alongside schema.ts. Do not edit by hand.' \
+	    '// Adding a new schema requires re-running `make generate-typescript`.' \
+	    'export type { components, paths, webhooks } from "./schema.js";' \
+	    '' \
+	    'import type { components } from "./schema.js";' \
+	    '' \
+	    'export type MailboxEnvelopeV1 = components["schemas"]["MailboxEnvelopeV1"];' \
+	    'export type MailboxEnvelopeType = components["schemas"]["MailboxEnvelopeType"];' \
+	    'export type MailboxSshAuthRequestPayloadV1 = components["schemas"]["MailboxSshAuthRequestPayloadV1"];' \
+	    'export type MailboxSshAuthResponsePayloadV1 = components["schemas"]["MailboxSshAuthResponsePayloadV1"];' \
+	    'export type MailboxSshAuthResponseSuccessV1 = components["schemas"]["MailboxSshAuthResponseSuccessV1"];' \
+	    'export type MailboxSshAuthResponseFailureV1 = components["schemas"]["MailboxSshAuthResponseFailureV1"];' \
+	    'export type MailboxSshSignRequestPayloadV1 = components["schemas"]["MailboxSshSignRequestPayloadV1"];' \
+	    'export type MailboxSshSignResponsePayloadV1 = components["schemas"]["MailboxSshSignResponsePayloadV1"];' \
+	    'export type MailboxSshSignResponseSuccessV1 = components["schemas"]["MailboxSshSignResponseSuccessV1"];' \
+	    'export type MailboxSshSignResponseFailureV1 = components["schemas"]["MailboxSshSignResponseFailureV1"];' \
+	    'export type MailboxGpgSignRequestPayloadV1 = components["schemas"]["MailboxGpgSignRequestPayloadV1"];' \
+	    'export type MailboxGpgSignResponsePayloadV1 = components["schemas"]["MailboxGpgSignResponsePayloadV1"];' \
+	    'export type MailboxGpgSignResponseSuccessV1 = components["schemas"]["MailboxGpgSignResponseSuccessV1"];' \
+	    'export type MailboxGpgSignResponseFailureV1 = components["schemas"]["MailboxGpgSignResponseFailureV1"];' \
+	    'export type MailboxGpgDecryptRequestPayloadV1 = components["schemas"]["MailboxGpgDecryptRequestPayloadV1"];' \
+	    'export type MailboxGpgDecryptResponsePayloadV1 = components["schemas"]["MailboxGpgDecryptResponsePayloadV1"];' \
+	    'export type MailboxGpgDecryptResponseSuccessV1 = components["schemas"]["MailboxGpgDecryptResponseSuccessV1"];' \
+	    'export type MailboxGpgDecryptResponseFailureV1 = components["schemas"]["MailboxGpgDecryptResponseFailureV1"];' \
+	    'export type MailboxAgeUnwrapRequestPayloadV1 = components["schemas"]["MailboxAgeUnwrapRequestPayloadV1"];' \
+	    'export type MailboxAgeUnwrapResponsePayloadV1 = components["schemas"]["MailboxAgeUnwrapResponsePayloadV1"];' \
+	    'export type MailboxAgeUnwrapResponseSuccessV1 = components["schemas"]["MailboxAgeUnwrapResponseSuccessV1"];' \
+	    'export type MailboxAgeUnwrapResponseFailureV1 = components["schemas"]["MailboxAgeUnwrapResponseFailureV1"];' \
+	    'export type MailboxPkcs11SignRequestPayloadV1 = components["schemas"]["MailboxPkcs11SignRequestPayloadV1"];' \
+	    'export type MailboxPkcs11SignResponsePayloadV1 = components["schemas"]["MailboxPkcs11SignResponsePayloadV1"];' \
+	    'export type MailboxPkcs11SignResponseSuccessV1 = components["schemas"]["MailboxPkcs11SignResponseSuccessV1"];' \
+	    'export type MailboxPkcs11SignResponseFailureV1 = components["schemas"]["MailboxPkcs11SignResponseFailureV1"];' \
+	    'export type MailboxPkcs11DeriveRequestPayloadV1 = components["schemas"]["MailboxPkcs11DeriveRequestPayloadV1"];' \
+	    'export type MailboxPkcs11DeriveResponsePayloadV1 = components["schemas"]["MailboxPkcs11DeriveResponsePayloadV1"];' \
+	    'export type MailboxPkcs11DeriveResponseSuccessV1 = components["schemas"]["MailboxPkcs11DeriveResponseSuccessV1"];' \
+	    'export type MailboxPkcs11DeriveResponseFailureV1 = components["schemas"]["MailboxPkcs11DeriveResponseFailureV1"];' \
+	    'export type MailboxEnrollRequestPayloadV1 = components["schemas"]["MailboxEnrollRequestPayloadV1"];' \
+	    'export type MailboxEnrollResponsePayloadV1 = components["schemas"]["MailboxEnrollResponsePayloadV1"];' \
+	    'export type MailboxEnrollResponseApprovedV1 = components["schemas"]["MailboxEnrollResponseApprovedV1"];' \
+	    'export type MailboxEnrollResponseRejectedV1 = components["schemas"]["MailboxEnrollResponseRejectedV1"];' \
+	    > $@
 
 .PHONY: generate-check
 generate-check: generate
 	@echo "[generate-check] verifying no generator drift"
-	@if ! git diff --quiet -- $(OPENAPI_DIR)/bundled $(GO_DIR) $(SWIFT_GEN_DIR) $(TS_SRC_DIR) 2>/dev/null; then \
+	@# `git diff --quiet` ignores untracked files, so also check that the
+	@# tracked-paths working tree matches HEAD AND that no new untracked
+	@# files appeared under the generated directories. Both signals must
+	@# stay clean for the check to pass.
+	@dirty=$$(git status --porcelain -- \
+	    $(OPENAPI_DIR)/bundled $(GO_DIR) $(SWIFT_GEN_DIR) $(TS_SRC_DIR) 2>/dev/null); \
+	if [ -n "$$dirty" ]; then \
 	    echo "generate-check: generated files are stale. Run 'make generate' and commit the result." >&2; \
-	    git --no-pager diff --stat -- $(OPENAPI_DIR)/bundled $(GO_DIR) $(SWIFT_GEN_DIR) $(TS_SRC_DIR); \
+	    printf '%s\n' "$$dirty"; \
 	    exit 1; \
 	fi
 	@echo "[generate-check] no drift"
@@ -119,15 +174,30 @@ generate-check: generate
 # swift-openapi-generator binary cache
 # ----------------------------------------------------------------------------
 
-$(SWIFT_OPENAPI_GENERATOR_CLONE):
-	@echo "[swift-openapi-generator] cloning $(SWIFT_OPENAPI_GENERATOR_GIT_TAG)"
-	@git -c advice.detachedHead=false clone \
-	    --branch "$(SWIFT_OPENAPI_GENERATOR_GIT_TAG)" \
-	    --depth 1 \
-	    "$(SWIFT_OPENAPI_GENERATOR_GIT_URL)" \
-	    "$(SWIFT_OPENAPI_GENERATOR_CLONE)"
+# Refresh the cached clone whenever the pinned tag changes. We stash the
+# active tag in a stamp file; if the pin moves, we wipe the clone and
+# reclone at the new tag, forcing a binary rebuild.
+SWIFT_OPENAPI_GENERATOR_TAG_STAMP := $(SWIFT_OPENAPI_GENERATOR_CLONE)/.tag
 
-$(SWIFT_OPENAPI_GENERATOR_BIN): | $(SWIFT_OPENAPI_GENERATOR_CLONE)
+.PHONY: swift-openapi-generator-clone
+swift-openapi-generator-clone: $(SWIFT_OPENAPI_GENERATOR_TAG_STAMP)
+
+$(SWIFT_OPENAPI_GENERATOR_TAG_STAMP):
+	@if [ -d "$(SWIFT_OPENAPI_GENERATOR_CLONE)" ] && [ "$$(cat $@ 2>/dev/null)" != "$(SWIFT_OPENAPI_GENERATOR_GIT_TAG)" ]; then \
+	    echo "[swift-openapi-generator] pin changed -> wiping $(SWIFT_OPENAPI_GENERATOR_CLONE)"; \
+	    rm -rf "$(SWIFT_OPENAPI_GENERATOR_CLONE)"; \
+	fi
+	@if [ ! -d "$(SWIFT_OPENAPI_GENERATOR_CLONE)" ]; then \
+	    echo "[swift-openapi-generator] cloning $(SWIFT_OPENAPI_GENERATOR_GIT_TAG)"; \
+	    git -c advice.detachedHead=false clone \
+	        --branch "$(SWIFT_OPENAPI_GENERATOR_GIT_TAG)" \
+	        --depth 1 \
+	        "$(SWIFT_OPENAPI_GENERATOR_GIT_URL)" \
+	        "$(SWIFT_OPENAPI_GENERATOR_CLONE)"; \
+	fi
+	@printf '%s' "$(SWIFT_OPENAPI_GENERATOR_GIT_TAG)" > $@
+
+$(SWIFT_OPENAPI_GENERATOR_BIN): $(SWIFT_OPENAPI_GENERATOR_TAG_STAMP)
 	@echo "[swift-openapi-generator] building $@"
 	@$(SWIFT) build \
 	    --package-path "$(SWIFT_OPENAPI_GENERATOR_CLONE)" \
@@ -142,18 +212,25 @@ $(SWIFT_OPENAPI_GENERATOR_BIN): | $(SWIFT_OPENAPI_GENERATOR_CLONE)
 build: build-go build-swift build-typescript
 	@echo "[build] done"
 
+# Generated outputs land in WS1.4. Until then, build/test ensure they
+# exist by running the generator first; once committed, the generator is
+# a no-op on the second run.
 .PHONY: build-go
-build-go:
+build-go: generate-go
 	@echo "[build-go] building $(GO_DIR)/..."
 	@cd $(GO_DIR) && $(GO) build ./...
 
 .PHONY: build-swift
-build-swift:
-	@echo "[build-swift] swift build"
-	@$(SWIFT) build
+build-swift: generate-swift
+	@if [ -f Package.swift ]; then \
+	    echo "[build-swift] swift build"; \
+	    $(SWIFT) build; \
+	else \
+	    echo "[build-swift] Package.swift not present — skipping (lands in WS1.4)"; \
+	fi
 
 .PHONY: build-typescript
-build-typescript:
+build-typescript: generate-typescript
 	@echo "[build-typescript] $(TS_DIR) tsc"
 	@cd $(TS_DIR) && $(NPM) install --silent --no-audit --no-fund --prefer-offline >/dev/null
 	@cd $(TS_DIR) && $(NPM) run build --silent
@@ -163,20 +240,28 @@ test: test-go test-swift test-typescript
 	@echo "[test] done"
 
 .PHONY: test-go
-test-go:
+test-go: generate-go
 	@echo "[test-go] go test ./go/..."
 	@cd $(GO_DIR) && $(GO) test ./...
 
 .PHONY: test-swift
-test-swift:
-	@echo "[test-swift] swift test"
-	@$(SWIFT) test
+test-swift: generate-swift
+	@if [ -f Package.swift ]; then \
+	    echo "[test-swift] swift test"; \
+	    $(SWIFT) test; \
+	else \
+	    echo "[test-swift] Package.swift not present — skipping (lands in WS1.4)"; \
+	fi
 
 .PHONY: test-typescript
-test-typescript:
+test-typescript: generate-typescript
 	@echo "[test-typescript] $(TS_DIR) test"
 	@cd $(TS_DIR) && $(NPM) install --silent --no-audit --no-fund --prefer-offline >/dev/null
-	@cd $(TS_DIR) && $(NPM) test --silent
+	@if [ -f $(TS_SRC_DIR)/index.test.ts ]; then \
+	    cd $(TS_DIR) && $(NPM) test --silent; \
+	else \
+	    echo "[test-typescript] $(TS_SRC_DIR)/index.test.ts not present — skipping (lands in WS1.5 smoke tests)"; \
+	fi
 
 # ----------------------------------------------------------------------------
 # Clean

@@ -50,27 +50,39 @@ components:
     MailboxGpgSignResponsePayloadV1:
       title: MailboxGpgSignResponsePayloadV1
       description: >-
-        Response payload for the `gpg_sign` envelope type. Exactly one of
-        `armored_signature` (success) or `error_code` (failure) MUST be
-        present.
+        Response payload for the `gpg_sign` envelope type. Discriminated as
+        a success / failure pair.
+      oneOf:
+        - $ref: '#/components/schemas/MailboxGpgSignResponseSuccessV1'
+        - $ref: '#/components/schemas/MailboxGpgSignResponseFailureV1'
+
+    MailboxGpgSignResponseSuccessV1:
+      title: MailboxGpgSignResponseSuccessV1
+      description: Success branch of `MailboxGpgSignResponsePayloadV1`.
       type: object
       additionalProperties: false
+      required: [armored_signature]
       properties:
         armored_signature:
           type: string
-          description: ASCII-armored OpenPGP signature. Present on success.
+          description: ASCII-armored OpenPGP signature.
           example: '-----BEGIN PGP SIGNATURE-----...'
+        approval_proof:
+          $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+
+    MailboxGpgSignResponseFailureV1:
+      title: MailboxGpgSignResponseFailureV1
+      description: Failure branch of `MailboxGpgSignResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required: [error_code]
+      properties:
         error_code:
           $ref: 'common.yaml#/components/schemas/SigningErrorCode'
         error_message:
           type: string
           description: Human-readable error message.
           example: User rejected the request
-        approval_proof:
-          $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
-      oneOf:
-        - required: [armored_signature]
-        - required: [error_code]
 
     # ---- gpg_decrypt ------------------------------------------------------
 
@@ -111,19 +123,27 @@ components:
     MailboxGpgDecryptResponsePayloadV1:
       title: MailboxGpgDecryptResponsePayloadV1
       description: >-
-        Response payload for the `gpg_decrypt` envelope type. On success both
-        `session_key` and `algorithm` MUST be present together; on failure
-        `error_code` MUST be present. Exactly one of those two outcomes is
-        valid.
+        Response payload for the `gpg_decrypt` envelope type. Discriminated
+        as a success / failure pair. The success branch carries both
+        `session_key` and `algorithm`; the failure branch carries
+        `error_code`.
+      oneOf:
+        - $ref: '#/components/schemas/MailboxGpgDecryptResponseSuccessV1'
+        - $ref: '#/components/schemas/MailboxGpgDecryptResponseFailureV1'
+
+    MailboxGpgDecryptResponseSuccessV1:
+      title: MailboxGpgDecryptResponseSuccessV1
+      description: Success branch of `MailboxGpgDecryptResponsePayloadV1`.
       type: object
       additionalProperties: false
+      required: [session_key, algorithm]
       properties:
         session_key:
           type: string
           format: byte
           description: >-
             RFC 4648 standard base64 with `=` padding for the unwrapped
-            session key. Present together with `algorithm` on success.
+            session key.
           example: c2Vzc2lvbiBrZXk=
         algorithm:
           type: integer
@@ -131,20 +151,24 @@ components:
           minimum: 0
           maximum: 255
           description: >-
-            OpenPGP symmetric algorithm id (RFC 4880 §9.2). Present together
-            with `session_key` on success.
+            OpenPGP symmetric algorithm id (RFC 4880 §9.2).
           example: 9
+        approval_proof:
+          $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
+
+    MailboxGpgDecryptResponseFailureV1:
+      title: MailboxGpgDecryptResponseFailureV1
+      description: Failure branch of `MailboxGpgDecryptResponsePayloadV1`.
+      type: object
+      additionalProperties: false
+      required: [error_code]
+      properties:
         error_code:
           $ref: 'common.yaml#/components/schemas/SigningErrorCode'
         error_message:
           type: string
           description: Human-readable error message.
           example: User rejected the request
-        approval_proof:
-          $ref: 'common.yaml#/components/schemas/ApprovalAttestedKeyProof'
-      oneOf:
-        - required: [session_key, algorithm]
-        - required: [error_code]
 
     PkeskData:
       title: PkeskData
