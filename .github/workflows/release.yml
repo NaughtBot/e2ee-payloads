@@ -33,6 +33,8 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
 
       - name: Resolve version
         id: version
@@ -46,6 +48,38 @@ jobs:
             exit 2
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # Reject release tags that do not point at a commit reachable from
+      # main. Without this, anyone with push access could fork a branch
+      # off an old commit and tag a release from there, bypassing the
+      # PR + main-branch review process.
+      - name: Verify tag commit is reachable from origin/main
+        run: |
+          set -euo pipefail
+          tag_commit=$(git rev-parse HEAD)
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$tag_commit" origin/main; then
+            echo "release: tag commit $tag_commit is not reachable from origin/main." >&2
+            echo "Releases MUST be tagged on a main commit." >&2
+            exit 2
+          fi
+
+      # Verify typescript/package.json version matches the tag BEFORE
+      # any tags or GitHub release are created. Catching a missing
+      # version bump here means we never end up with a half-published
+      # release (subdir tags + GH release present, npm missing /
+      # mismatched) that requires manual cleanup.
+      - name: Verify typescript/package.json version matches tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          pkg_version=$(node -e 'const fs = require("node:fs"); const pkg = JSON.parse(fs.readFileSync("typescript/package.json","utf8")); process.stdout.write(pkg.version);')
+          if [ "$pkg_version" != "$VERSION" ]; then
+            echo "release: typescript/package.json version ($pkg_version) does not match tag ($VERSION)." >&2
+            echo "Bump the version in a commit on main before pushing v${VERSION}." >&2
+            exit 2
+          fi
 
       - uses: ./.github/actions/lint-and-go-typescript
 
@@ -80,27 +114,46 @@ jobs:
         with:
           fetch-depth: 0
 
+      # `git tag -a` requires user identity; arc-runners do not ship a
+      # global identity, so set a workflow-scoped one explicitly.
+      - name: Configure git identity for tagging
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
       - name: Push per-language subdir tags
         env:
           VERSION: ${{ needs.verify.outputs.version }}
         run: |
           set -euo pipefail
+          tag_commit=$(git rev-parse HEAD)
           for lang in go swift typescript; do
             tag="${lang}/v${VERSION}"
             if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
-              echo "tag ${tag} already exists; skipping"
-              continue
+              existing=$(git rev-list -n1 "refs/tags/${tag}")
+              if [ "$existing" = "$tag_commit" ]; then
+                echo "tag ${tag} already exists at the same commit ($tag_commit); reusing."
+                continue
+              fi
+              echo "release: tag ${tag} already exists at $existing but the release commit is $tag_commit. Refusing to clobber." >&2
+              exit 2
             fi
             git tag -a "${tag}" -m "${lang} v${VERSION}"
             git push origin "${tag}"
           done
 
-      - name: Create GitHub release
+      # Idempotent: if a previous run already opened the release (e.g.
+      # an earlier failed npm publish), reuse it.
+      - name: Create or reuse GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.verify.outputs.version }}
         run: |
           set -euo pipefail
+          if gh release view "v${VERSION}" >/dev/null 2>&1; then
+            echo "release v${VERSION} already exists; reusing."
+            exit 0
+          fi
           gh release create "v${VERSION}" \
             --title "v${VERSION}" \
             --generate-notes
@@ -134,10 +187,13 @@ jobs:
         working-directory: typescript
         run: |
           set -euo pipefail
+          # The verify job already enforced that package.json `version`
+          # matches the tag; the same check here is a belt-and-braces
+          # guard against package.json being mutated between jobs.
           metadata=$(node -e 'const fs = require("node:fs"); const pkg = JSON.parse(fs.readFileSync("package.json","utf8")); process.stdout.write(`${pkg.name}\t${pkg.version}`);')
           IFS=$'\t' read -r package_name package_version <<< "$metadata"
           if [ "$package_version" != "$VERSION" ]; then
-            echo "release: package.json version ($package_version) does not match tag ($VERSION); commit the bump before tagging." >&2
+            echo "release: package.json version ($package_version) does not match tag ($VERSION)." >&2
             exit 2
           fi
           if published_version=$(npm view "${package_name}@${package_version}" version 2>/dev/null) \
