@@ -17,14 +17,17 @@ export interface components {
              * @enum {integer}
              */
             v: 1;
-            type: components["schemas"]["MailboxEnvelopeType"];
+            /**
+             * @description Registered type discriminator. Receivers SHOULD validate against the `MailboxEnvelopeType` registry enum at runtime; unknown values MUST be logged and dropped without rejecting the envelope.
+             * @example ssh_sign
+             */
+            type: string;
             /**
              * Format: uuid
              * @description Canonical lower-case RFC 4122 UUID string for idempotency / dedup on the receiver.
              */
             id: string;
             /**
-             * Format: date-time
              * @description RFC 3339 UTC timestamp with the canonical `Z` suffix. Senders SHOULD emit fractional seconds (`2026-05-03T05:00:00.123Z`); receivers MUST also accept the plain second-precision form (`2026-05-03T05:00:00Z`). Times outside UTC and timestamps lacking the `T` delimiter are rejected.
              * @example 2026-05-03T05:00:00.123Z
              */
@@ -194,22 +197,22 @@ export interface components {
              * @description Render the value in a monospace font.
              * @default false
              */
-            monospace: boolean;
+            monospace?: boolean;
             /**
              * @description Field can be expanded to show additional content.
              * @default false
              */
-            expandable: boolean;
+            expandable?: boolean;
             /**
              * @description Render the value across multiple lines.
              * @default false
              */
-            multiline: boolean;
+            multiline?: boolean;
             /**
              * @description Value contains sensitive information; UI may mask it.
              * @default false
              */
-            sensitive: boolean;
+            sensitive?: boolean;
             /** @description Optional SF Symbol or Material icon name. */
             icon?: string;
         };
@@ -289,7 +292,7 @@ export interface components {
              * @default 1
              * @example 1
              */
-            flags: number;
+            flags?: number;
             /** @description Device-side key identifier (e.g. iOS Secure Enclave handle) used to select among enrolled signing keys on the approver. */
             device_key_id: string;
             approval_challenge?: components["schemas"]["ApprovalChallenge"];
@@ -352,7 +355,7 @@ export interface components {
              * @default 1
              * @example 1
              */
-            flags: number;
+            flags?: number;
             /** @description Device-side key identifier (e.g. iOS Secure Enclave handle) used to select among enrolled signing keys on the approver. */
             device_key_id: string;
             approval_challenge?: components["schemas"]["ApprovalChallenge"];
@@ -720,7 +723,7 @@ export interface components {
              * @description Include a self-certification signature for GPG export. Ignored for non-GPG purposes.
              * @default false
              */
-            include_certification: boolean;
+            include_certification?: boolean;
             approval_challenge?: components["schemas"]["ApprovalChallenge"];
             display?: components["schemas"]["DisplaySchema"];
             source_info?: components["schemas"]["SourceInfo"];

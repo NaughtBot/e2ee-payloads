@@ -26,7 +26,10 @@ components:
             - 1
           description: Envelope version. Receivers reject unknown versions.
         type:
-          $ref: '#/components/schemas/MailboxEnvelopeType'
+          type: string
+          minLength: 1
+          example: ssh_sign
+          description: Registered type discriminator. Receivers SHOULD validate against the `MailboxEnvelopeType` registry enum at runtime; unknown values MUST be logged and dropped without rejecting the envelope.
         id:
           type: string
           format: uuid
@@ -34,13 +37,13 @@ components:
           description: Canonical lower-case RFC 4122 UUID string for idempotency / dedup on the receiver.
         issued_at:
           type: string
-          format: date-time
           pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$
           example: '2026-05-03T05:00:00.123Z'
           description: RFC 3339 UTC timestamp with the canonical `Z` suffix. Senders SHOULD emit fractional seconds (`2026-05-03T05:00:00.123Z`); receivers MUST also accept the plain second-precision form (`2026-05-03T05:00:00Z`). Times outside UTC and timestamps lacking the `T` delimiter are rejected.
         payload:
           type: object
           additionalProperties: true
+          x-go-type: json.RawMessage
           description: Type-specific payload, MUST be a JSON object (`{...}`); scalar / array / string roots are not valid envelopes. The internal schema is validated by the per-`type` handler defined under `payloads/`, not by the envelope codec.
     MailboxEnvelopeType:
       title: MailboxEnvelopeType

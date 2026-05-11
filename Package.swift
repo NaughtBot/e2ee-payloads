@@ -10,8 +10,15 @@ import PackageDescription
 let package = Package(
     name: "NaughtBotE2EEPayloads",
     platforms: [
-        .iOS("18.0"),
-        .macOS("26.0"),
+        // Match swift-openapi-runtime's minimum supported targets so this
+        // package does not artificially raise the floor for downstream
+        // SwiftPM consumers; the generated module is pure Codable types
+        // and does not use any newer-platform APIs.
+        .iOS(.v15),
+        .macOS(.v13),
+        .tvOS(.v15),
+        .watchOS(.v8),
+        .visionOS(.v1),
     ],
     products: [
         .library(

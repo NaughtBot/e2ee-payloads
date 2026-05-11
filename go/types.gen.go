@@ -6,7 +6,6 @@ package payloads
 import (
 	"encoding/json"
 	"errors"
-	"time"
 
 	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -522,13 +521,13 @@ type MailboxEnvelopeV1 struct {
 	Id openapi_types.UUID `json:"id"`
 
 	// IssuedAt RFC 3339 UTC timestamp with the canonical `Z` suffix. Senders SHOULD emit fractional seconds (`2026-05-03T05:00:00.123Z`); receivers MUST also accept the plain second-precision form (`2026-05-03T05:00:00Z`). Times outside UTC and timestamps lacking the `T` delimiter are rejected.
-	IssuedAt time.Time `json:"issued_at"`
+	IssuedAt string `json:"issued_at"`
 
 	// Payload Type-specific payload, MUST be a JSON object (`{...}`); scalar / array / string roots are not valid envelopes. The internal schema is validated by the per-`type` handler defined under `payloads/`, not by the envelope codec.
-	Payload map[string]interface{} `json:"payload"`
+	Payload json.RawMessage `json:"payload"`
 
-	// Type Registered set of envelope `type` discriminators. Receivers may decode the envelope successfully but log+drop on unknown values. Adding a new type requires adding it here and shipping the matching payload schema under `payloads/<surface>.yaml`.
-	Type MailboxEnvelopeType `json:"type"`
+	// Type Registered type discriminator. Receivers SHOULD validate against the `MailboxEnvelopeType` registry enum at runtime; unknown values MUST be logged and dropped without rejecting the envelope.
+	Type string `json:"type"`
 
 	// V Envelope version. Receivers reject unknown versions.
 	V MailboxEnvelopeV1V `json:"v"`

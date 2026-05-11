@@ -37,8 +37,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/MailboxEnvelopeV1/v`.
             public var v: Components.Schemas.MailboxEnvelopeV1.vPayload
+            /// Registered type discriminator. Receivers SHOULD validate against the `MailboxEnvelopeType` registry enum at runtime; unknown values MUST be logged and dropped without rejecting the envelope.
+            ///
             /// - Remark: Generated from `#/components/schemas/MailboxEnvelopeV1/type`.
-            public var _type: Components.Schemas.MailboxEnvelopeType
+            public var _type: Swift.String
             /// Canonical lower-case RFC 4122 UUID string for idempotency / dedup on the receiver.
             ///
             /// - Remark: Generated from `#/components/schemas/MailboxEnvelopeV1/id`.
@@ -46,7 +48,7 @@ public enum Components {
             /// RFC 3339 UTC timestamp with the canonical `Z` suffix. Senders SHOULD emit fractional seconds (`2026-05-03T05:00:00.123Z`); receivers MUST also accept the plain second-precision form (`2026-05-03T05:00:00Z`). Times outside UTC and timestamps lacking the `T` delimiter are rejected.
             ///
             /// - Remark: Generated from `#/components/schemas/MailboxEnvelopeV1/issued_at`.
-            public var issued_at: Foundation.Date
+            public var issued_at: Swift.String
             /// Type-specific payload, MUST be a JSON object (`{...}`); scalar / array / string roots are not valid envelopes. The internal schema is validated by the per-`type` handler defined under `payloads/`, not by the envelope codec.
             ///
             /// - Remark: Generated from `#/components/schemas/MailboxEnvelopeV1/payload`.
@@ -75,15 +77,15 @@ public enum Components {
             ///
             /// - Parameters:
             ///   - v: Envelope version. Receivers reject unknown versions.
-            ///   - _type:
+            ///   - _type: Registered type discriminator. Receivers SHOULD validate against the `MailboxEnvelopeType` registry enum at runtime; unknown values MUST be logged and dropped without rejecting the envelope.
             ///   - id: Canonical lower-case RFC 4122 UUID string for idempotency / dedup on the receiver.
             ///   - issued_at: RFC 3339 UTC timestamp with the canonical `Z` suffix. Senders SHOULD emit fractional seconds (`2026-05-03T05:00:00.123Z`); receivers MUST also accept the plain second-precision form (`2026-05-03T05:00:00Z`). Times outside UTC and timestamps lacking the `T` delimiter are rejected.
             ///   - payload: Type-specific payload, MUST be a JSON object (`{...}`); scalar / array / string roots are not valid envelopes. The internal schema is validated by the per-`type` handler defined under `payloads/`, not by the envelope codec.
             public init(
                 v: Components.Schemas.MailboxEnvelopeV1.vPayload,
-                _type: Components.Schemas.MailboxEnvelopeType,
+                _type: Swift.String,
                 id: Swift.String,
-                issued_at: Foundation.Date,
+                issued_at: Swift.String,
                 payload: Components.Schemas.MailboxEnvelopeV1.payloadPayload
             ) {
                 self.v = v
@@ -106,7 +108,7 @@ public enum Components {
                     forKey: .v
                 )
                 self._type = try container.decode(
-                    Components.Schemas.MailboxEnvelopeType.self,
+                    Swift.String.self,
                     forKey: ._type
                 )
                 self.id = try container.decode(
@@ -114,7 +116,7 @@ public enum Components {
                     forKey: .id
                 )
                 self.issued_at = try container.decode(
-                    Foundation.Date.self,
+                    Swift.String.self,
                     forKey: .issued_at
                 )
                 self.payload = try container.decode(

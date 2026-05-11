@@ -103,7 +103,14 @@ generate-typescript: bundle
 	@echo "[generate-typescript] regenerating $(TS_SCHEMA)"
 	@mkdir -p $(TS_SRC_DIR)
 	@cd $(TS_DIR) && $(NPM) install --silent --no-audit --no-fund --prefer-offline >/dev/null
-	@$(TS_DIR)/node_modules/.bin/openapi-typescript $(OPENAPI_BUNDLE) --output $(TS_SCHEMA)
+	@# `--default-non-nullable=false` keeps optional schema fields that
+	@# carry a `default:` value optional in the generated TypeScript
+	@# instead of promoting them to required. The wire contract treats
+	@# them as optional with a documented default; the upstream tool
+	@# changed the default in 7.x.
+	@$(TS_DIR)/node_modules/.bin/openapi-typescript $(OPENAPI_BUNDLE) \
+	    --default-non-nullable=false \
+	    --output $(TS_SCHEMA)
 	@$(MAKE) --no-print-directory $(TS_SRC_DIR)/index.ts
 
 # Re-export aliases authored alongside the generator: re-running `make

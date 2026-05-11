@@ -32,7 +32,18 @@ components:
           enum: [1]
           description: Envelope version. Receivers reject unknown versions.
         type:
-          $ref: '#/components/schemas/MailboxEnvelopeType'
+          type: string
+          # Modelled as an unconstrained string so receivers can decode the
+          # envelope and then log+drop unknown values per the v1 contract.
+          # The canonical registered set is published separately as the
+          # `MailboxEnvelopeType` enum below; receivers validate against
+          # that registry at runtime, not at the codec layer.
+          minLength: 1
+          example: ssh_sign
+          description: >-
+            Registered type discriminator. Receivers SHOULD validate against
+            the `MailboxEnvelopeType` registry enum at runtime; unknown
+            values MUST be logged and dropped without rejecting the envelope.
         id:
           type: string
           format: uuid
@@ -42,11 +53,14 @@ components:
             on the receiver.
         issued_at:
           type: string
-          format: date-time
-          # Restrict to the two RFC 3339 forms documented in
-          # core/memories/mailbox-envelope.md § "Timestamp format". The bare
-          # `format: date-time` would otherwise admit timezone offsets like
-          # `+02:00`, which the envelope spec rejects.
+          # Authored as a plain string with a regex pattern (NOT
+          # `format: date-time`). The wire timestamp is RFC 3339 with the
+          # canonical `Z` suffix; the pattern restricts to the two forms
+          # documented for the envelope. Tagging the field as
+          # `format: date-time` forces swift-openapi-generator to emit a
+          # `Foundation.Date`, which the default `Codable` implementation
+          # serialises as a JSON number and silently breaks round-trip
+          # with envelope producers.
           pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$'
           example: '2026-05-03T05:00:00.123Z'
           description: >-
@@ -58,6 +72,19 @@ components:
         payload:
           type: object
           additionalProperties: true
+          # Generators that decode the envelope first and dispatch by `type`
+          # MUST preserve `payload` as raw JSON so per-`type` handlers can
+          # decode the original byte stream without losing precision (the
+          # default Go map[string]interface{} representation widens int64
+          # values to float64). Honoured by oapi-codegen via
+          # `x-go-type: json.RawMessage`; other generators ignore the
+          # extension and keep their default object handling, which is fine
+          # because their default is already a string-keyed map / dictionary
+          # without the int64 widening problem.
+          # `encoding/json` is already imported by oapi-codegen's
+          # template, so no `x-go-type-import` is needed; declaring one
+          # would emit a duplicate import block.
+          x-go-type: json.RawMessage
           description: >-
             Type-specific payload, MUST be a JSON object (`{...}`); scalar /
             array / string roots are not valid envelopes. The internal schema
