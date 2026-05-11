@@ -153,8 +153,9 @@ GitHub release creation). Pushing the tag is the entire release surface.
 Go consumers import from `github.com/naughtbot/e2ee-payloads/go` and
 pin via `go get github.com/naughtbot/e2ee-payloads/go@v<ver>`. SwiftPM
 consumers depend on `https://github.com/NaughtBot/e2ee-payloads.git`
-and pin via `from: "<ver>"`. npm consumers install
-`@naughtbot/e2ee-payloads@<ver>`.
+and pin via `from: "<ver>"` (against the top-level `v<ver>` semver
+tag — SwiftPM does not resolve against the `swift/v<ver>` subdir
+marker). npm consumers install `@naughtbot/e2ee-payloads@<ver>`.
 
 ## Known debt
 

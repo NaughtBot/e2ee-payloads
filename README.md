@@ -78,9 +78,11 @@ pushes a matching `go/v<ver>` tag for every release.
 import NaughtBotE2EEPayloads
 ```
 
-The root `Package.swift` exposes the `NaughtBotE2EEPayloads` target;
-SwiftPM consumers can pin against either the top-level `v<ver>` tag or
-the `swift/v<ver>` subdirectory tag.
+The root `Package.swift` exposes the `NaughtBotE2EEPayloads` target.
+SwiftPM consumes the top-level `v<ver>` semver tag (the `swift/v<ver>`
+subdir tag pushed by the release workflow is a parallel marker for
+release audits — SwiftPM's `from:` / `exact:` requirements only
+resolve against semver-shaped tags).
 
 ### TypeScript / JavaScript
 
