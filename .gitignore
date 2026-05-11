@@ -6,3 +6,11 @@ dist/
 build/
 .idea/
 .vscode/
+
+# swift-openapi-generator binary cache used by `make generate-swift`.
+# We rebuild from the upstream tag on every host instead of vendoring.
+.swift-openapi-generator/
+
+# SwiftPM build outputs.
+.build/
+Package.resolved

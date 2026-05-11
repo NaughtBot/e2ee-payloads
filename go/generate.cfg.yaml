@@ -1,0 +1,9 @@
+# oapi-codegen configuration consumed by the repository Makefile's
+# `generate-go` step. Emits a single `types.gen.go` containing the schema
+# component types for every Mailbox*PayloadV1 / MailboxEnvelopeV1 schema.
+package: payloads
+output: types.gen.go
+generate:
+  models: true
+output-options:
+  skip-prune: true

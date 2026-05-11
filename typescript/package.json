@@ -1,0 +1,34 @@
+{
+  "name": "@naughtbot/e2ee-payloads",
+  "version": "0.1.0",
+  "description": "Generated TypeScript types for the NaughtBot mailbox envelope and per-type payload schemas.",
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NaughtBot/e2ee-payloads.git",
+    "directory": "typescript"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test --experimental-strip-types src/index.test.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.4.4",
+    "typescript": "^5.6.3"
+  }
+}

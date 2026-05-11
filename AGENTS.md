@@ -61,13 +61,22 @@ The Makefile drives the per-language tooling.
 - `make build` — build every language binding (Go, Swift, TypeScript).
 - `make test` — run unit tests for every language binding.
 
-Tool versions (wired in WS1.3) match the rest of the workspace:
+Tool versions:
 
-- Go 1.26.x with `go tool oapi-codegen`.
-- Swift 6.x with `swift-openapi-generator` (build-time plugin).
-- Node 24 / `pnpm` 9 (or `npm`) with `openapi-typescript` and Redocly.
+- Go 1.26.x with `go tool oapi-codegen` (declared in `go/go.mod` via the
+  `tool` directive). No additional install step.
+- Swift 6.x with `swift-openapi-generator` 1.10.2 (cloned and built into
+  `.swift-openapi-generator/` on first `make generate-swift`). Cached
+  across runs; bump the pin by setting `SWIFT_OPENAPI_GENERATOR_GIT_TAG`.
+- Node 24 with `openapi-typescript` and `typescript` (declared as
+  `devDependencies` in `typescript/package.json`). Redocly is invoked via
+  `npx -y -p @redocly/cli@latest`.
 
-Until WS1.3 lands, the Make targets print TODO stubs.
+The Makefile bundles the multi-file OpenAPI sources via
+`make bundle` (Redocly `redocly bundle`) into a single self-contained
+`openapi/bundled/payloads.yaml`, which feeds every per-language
+generator. Adding a new payload surface requires re-exporting its schemas
+from `openapi/payloads.yaml`.
 
 ## Coding Style & Naming Conventions
 
