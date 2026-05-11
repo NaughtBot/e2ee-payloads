@@ -133,7 +133,7 @@ func TestSshSignRequestRoundTrip(t *testing.T) {
 func TestSshAuthResponseSuccessRouting(t *testing.T) {
 	t.Parallel()
 
-	const successJSON = `{"signature":"YWJj","counter":7}`
+	const successJSON = `{"signature":"YWJj","flags":1,"counter":7}`
 	var resp MailboxSshAuthResponsePayloadV1
 	if err := json.Unmarshal([]byte(successJSON), &resp); err != nil {
 		t.Fatalf("unmarshal success: %v", err)
@@ -174,15 +174,17 @@ func TestSshAuthResponseSuccessRouting(t *testing.T) {
 }
 
 // TestSshAuthResponseSuccessCounterRoundTrip is a regression test for
-// NaughtBot/e2ee-payloads#17: the SK monotonic counter must survive a
-// JSON encode/decode round-trip on the SSH auth success branch. Without
-// this field the requester cannot rebuild the OpenSSH SK signature
-// preimage `SHA256(application) || flags || counter || SHA256(data)`.
+// NaughtBot/e2ee-payloads#17: the SK monotonic counter and per-signature
+// assertion flags byte must survive a JSON encode/decode round-trip on the
+// SSH auth success branch. Without these fields the requester cannot
+// rebuild the OpenSSH SK signature preimage
+// `SHA256(application) || flags || counter || SHA256(data)`.
 func TestSshAuthResponseSuccessCounterRoundTrip(t *testing.T) {
 	t.Parallel()
 
 	in := MailboxSshAuthResponseSuccessV1{
 		Signature: []byte("ssh-sk-sig"),
+		Flags:     1,
 		Counter:   7,
 	}
 	out, err := json.Marshal(in)
@@ -192,6 +194,9 @@ func TestSshAuthResponseSuccessCounterRoundTrip(t *testing.T) {
 	if !strings.Contains(string(out), `"counter":7`) {
 		t.Errorf("expected counter in %s", out)
 	}
+	if !strings.Contains(string(out), `"flags":1`) {
+		t.Errorf("expected flags in %s", out)
+	}
 
 	var rt MailboxSshAuthResponseSuccessV1
 	if err := json.Unmarshal(out, &rt); err != nil {
@@ -200,12 +205,16 @@ func TestSshAuthResponseSuccessCounterRoundTrip(t *testing.T) {
 	if rt.Counter != 7 {
 		t.Errorf("Counter = %d, want 7", rt.Counter)
 	}
+	if rt.Flags != 1 {
+		t.Errorf("Flags = %d, want 1", rt.Flags)
+	}
 	if string(rt.Signature) != "ssh-sk-sig" {
 		t.Errorf("Signature lost: %q", rt.Signature)
 	}
 
-	// Boundary: u32 max counter value must round-trip without overflow.
+	// Boundary: u32 max counter and u8 max flags round-trip without overflow.
 	in.Counter = 4294967295
+	in.Flags = 255
 	out, err = json.Marshal(in)
 	if err != nil {
 		t.Fatalf("marshal max counter: %v", err)
@@ -217,16 +226,21 @@ func TestSshAuthResponseSuccessCounterRoundTrip(t *testing.T) {
 	if maxRT.Counter != 4294967295 {
 		t.Errorf("max Counter lost: got %d want 4294967295", maxRT.Counter)
 	}
+	if maxRT.Flags != 255 {
+		t.Errorf("max Flags lost: got %d want 255", maxRT.Flags)
+	}
 }
 
 // TestSshSignResponseSuccessCounterRoundTrip is the matching regression
 // test for the `ssh_sign` (e.g. SSH commit-signing) response branch, which
-// shares the same SK preimage construction as `ssh_auth`.
+// shares the same SK preimage construction as `ssh_auth`. Both `flags`
+// and `counter` are required so the requester can rebuild the preimage.
 func TestSshSignResponseSuccessCounterRoundTrip(t *testing.T) {
 	t.Parallel()
 
 	in := MailboxSshSignResponseSuccessV1{
 		Signature: []byte("ssh-sk-sig"),
+		Flags:     1,
 		Counter:   42,
 	}
 	out, err := json.Marshal(in)
@@ -236,6 +250,9 @@ func TestSshSignResponseSuccessCounterRoundTrip(t *testing.T) {
 	if !strings.Contains(string(out), `"counter":42`) {
 		t.Errorf("expected counter in %s", out)
 	}
+	if !strings.Contains(string(out), `"flags":1`) {
+		t.Errorf("expected flags in %s", out)
+	}
 
 	var rt MailboxSshSignResponseSuccessV1
 	if err := json.Unmarshal(out, &rt); err != nil {
@@ -243,6 +260,9 @@ func TestSshSignResponseSuccessCounterRoundTrip(t *testing.T) {
 	}
 	if rt.Counter != 42 {
 		t.Errorf("Counter = %d, want 42", rt.Counter)
+	}
+	if rt.Flags != 1 {
+		t.Errorf("Flags = %d, want 1", rt.Flags)
 	}
 }
 

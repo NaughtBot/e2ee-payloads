@@ -70,7 +70,7 @@ func envelopeAcceptsUnknownType() throws {
 @Test
 func sshSignResponseSuccessOneOf() throws {
     let json = """
-    {"signature":"YWJj","counter":7}
+    {"signature":"YWJj","flags":1,"counter":7}
     """.data(using: .utf8)!
 
     let resp = try decoder.decode(
@@ -80,6 +80,7 @@ func sshSignResponseSuccessOneOf() throws {
     switch resp {
     case .MailboxSshSignResponseSuccessV1(let success):
         #expect(!success.signature.data.isEmpty)
+        #expect(success.flags == 1)
         #expect(success.counter == 7)
     case .MailboxSshSignResponseFailureV1:
         Issue.record("expected success branch, got failure")
@@ -87,30 +88,35 @@ func sshSignResponseSuccessOneOf() throws {
 }
 
 // Regression test for NaughtBot/e2ee-payloads#17: the SK monotonic counter
-// must survive a JSON Codable round-trip on the SSH auth success branch.
-// Without this field the requester cannot rebuild the OpenSSH SK signature
-// preimage `SHA256(application) || flags || counter || SHA256(data)`.
+// and per-signature assertion flags byte must survive a JSON Codable
+// round-trip on the SSH auth success branch. Without these fields the
+// requester cannot rebuild the OpenSSH SK signature preimage
+// `SHA256(application) || flags || counter || SHA256(data)`.
 @Test
 func sshAuthResponseSuccessCounterRoundTrip() throws {
     let signatureBytes = Data("ssh-sk-sig".utf8)
     let original = Components.Schemas.MailboxSshAuthResponseSuccessV1(
         signature: .init(signatureBytes),
+        flags: 1,
         counter: 7
     )
     let encoded = try encoder.encode(original)
     let encodedString = String(decoding: encoded, as: UTF8.self)
     #expect(encodedString.contains("\"counter\":7"))
+    #expect(encodedString.contains("\"flags\":1"))
 
     let decoded = try decoder.decode(
         Components.Schemas.MailboxSshAuthResponseSuccessV1.self,
         from: encoded
     )
     #expect(decoded.counter == 7)
+    #expect(decoded.flags == 1)
     #expect(Data(decoded.signature.data) == signatureBytes)
 
-    // Boundary: u32 max counter value must round-trip without overflow.
+    // Boundary: u32 max counter and u8 max flags round-trip without overflow.
     let maxOriginal = Components.Schemas.MailboxSshAuthResponseSuccessV1(
         signature: .init(signatureBytes),
+        flags: 255,
         counter: 4294967295
     )
     let maxEncoded = try encoder.encode(maxOriginal)
@@ -119,6 +125,7 @@ func sshAuthResponseSuccessCounterRoundTrip() throws {
         from: maxEncoded
     )
     #expect(maxDecoded.counter == 4294967295)
+    #expect(maxDecoded.flags == 255)
 }
 
 // Regression test for #17: per-credential `ssh_sk_flags` byte on the

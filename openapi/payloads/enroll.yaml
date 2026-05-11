@@ -140,14 +140,24 @@ components:
           maximum: 255
           description: >-
             Per-credential SSH-SK flags byte the approver baked into a newly
-            enrolled SSH security-key credential. Only meaningful when
+            enrolled SSH security-key credential. **MUST be present when
             `purpose` is the SSH signing purpose; absent for all other key
-            purposes. The requester MUST persist this value alongside the
-            credential public key and embed it (unchanged) in the OpenSSH SK
-            signature preimage on every subsequent `ssh_auth` / `ssh_sign`
-            verification: `SHA256(application) || flags || counter ||
-            SHA256(data)`. Bit `0x01` is "user presence required" and `0x04`
-            is "user verification required" per the OpenSSH SK protocol.
+            purposes.** (The schema cannot express that conditional
+            requirement directly because `MailboxEnrollResponseApprovedV1` is
+            a single monolithic shape with per-type-optional fields like
+            `fingerprint` / `encryption_public_key_hex`; requesters MUST
+            reject SSH-purpose approved responses that omit this field.)
+            The requester MUST persist this byte alongside the credential
+            public key and use it as the request `flags` input on every
+            subsequent `ssh_auth` / `ssh_sign` call. The approver echoes the
+            actual per-signature assertion flags byte back in the success
+            response (see `MailboxSshAuthResponseSuccessV1.flags`); that
+            asserted byte (which MAY differ from this enrollment flags byte
+            when, e.g., the SK could not deliver user verification) is what
+            the requester MUST embed into the OpenSSH SK signature preimage
+            `SHA256(application) || flags || counter || SHA256(data)`. Bit
+            `0x01` is "user presence required" and `0x04` is "user
+            verification required" per the OpenSSH SK protocol.
           example: 1
         attestation:
           $ref: 'common.yaml#/components/schemas/KeyMetadataAttestation'

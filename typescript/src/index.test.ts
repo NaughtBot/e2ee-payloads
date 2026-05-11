@@ -65,9 +65,10 @@ describe("MailboxSshSignRequestPayloadV1", () => {
 
 describe("MailboxSshSignResponsePayloadV1", () => {
   it("decodes success branch by structural narrowing", () => {
-    const json = '{"signature":"YWJj","counter":7}';
+    const json = '{"signature":"YWJj","flags":1,"counter":7}';
     const resp = JSON.parse(json) as MailboxSshSignResponsePayloadV1;
     assert.ok("signature" in resp && resp.signature !== undefined);
+    assert.ok("flags" in resp && resp.flags === 1);
     assert.ok("counter" in resp && resp.counter === 7);
     assert.ok(!("error_code" in resp) || resp.error_code === undefined);
   });
@@ -80,41 +81,48 @@ describe("MailboxSshSignResponsePayloadV1", () => {
 });
 
 // Regression test for NaughtBot/e2ee-payloads#17. The SK monotonic counter
-// is now required on both `ssh_auth` and `ssh_sign` success branches. The
-// compile-time bindings below also pin that `counter` is required (a
-// regression that makes it optional turns this file into a `tsc` error).
-describe("SSH-SK counter (issue #17)", () => {
-  it("requires counter on MailboxSshAuthResponseSuccessV1", () => {
+// and per-signature flags byte are now required on both `ssh_auth` and
+// `ssh_sign` success branches. The compile-time bindings below also pin
+// that `counter` and `flags` are required (a regression that makes either
+// optional turns this file into a `tsc` error).
+describe("SSH-SK counter + flags (issue #17)", () => {
+  it("requires counter + flags on MailboxSshAuthResponseSuccessV1", () => {
     const success: MailboxSshAuthResponseSuccessV1 = {
       signature: "YWJj",
+      flags: 1,
       counter: 7,
     };
     const parsed = JSON.parse(
       JSON.stringify(success),
     ) as MailboxSshAuthResponseSuccessV1;
     assert.equal(parsed.counter, 7);
+    assert.equal(parsed.flags, 1);
     assert.equal(parsed.signature, "YWJj");
 
-    // u32 max boundary value round-trips without overflow.
-    const maxCounter: MailboxSshAuthResponseSuccessV1 = {
+    // u32 max counter + u8 max flags round-trip without overflow.
+    const maxBoundary: MailboxSshAuthResponseSuccessV1 = {
       signature: "YWJj",
+      flags: 255,
       counter: 4294967295,
     };
     const parsedMax = JSON.parse(
-      JSON.stringify(maxCounter),
+      JSON.stringify(maxBoundary),
     ) as MailboxSshAuthResponseSuccessV1;
     assert.equal(parsedMax.counter, 4294967295);
+    assert.equal(parsedMax.flags, 255);
   });
 
-  it("requires counter on MailboxSshSignResponseSuccessV1", () => {
+  it("requires counter + flags on MailboxSshSignResponseSuccessV1", () => {
     const success: MailboxSshSignResponseSuccessV1 = {
       signature: "YWJj",
+      flags: 1,
       counter: 42,
     };
     const parsed = JSON.parse(
       JSON.stringify(success),
     ) as MailboxSshSignResponseSuccessV1;
     assert.equal(parsed.counter, 42);
+    assert.equal(parsed.flags, 1);
   });
 });
 

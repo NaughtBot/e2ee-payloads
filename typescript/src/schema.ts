@@ -306,7 +306,7 @@ export interface components {
         MailboxSshAuthResponsePayloadV1: components["schemas"]["MailboxSshAuthResponseSuccessV1"] | components["schemas"]["MailboxSshAuthResponseFailureV1"];
         /**
          * MailboxSshAuthResponseSuccessV1
-         * @description Success branch of `MailboxSshAuthResponsePayloadV1`. Carries the raw SSH signature plus the SK monotonic counter the signer's secure element returned for this signing operation; both are required so the requester can rebuild the OpenSSH SK signature preimage (`SHA256(application) || flags || counter || SHA256(data)`) and verify against the enrolled credential public key.
+         * @description Success branch of `MailboxSshAuthResponsePayloadV1`. Carries the raw SSH signature plus the per-signature SK assertion flags byte and monotonic counter the signer's secure element returned for this signing operation; all three are required so the requester can rebuild the OpenSSH SK signature preimage (`SHA256(application) || flags || counter || SHA256(data)`) and verify against the enrolled credential public key.
          */
         MailboxSshAuthResponseSuccessV1: {
             /**
@@ -314,6 +314,11 @@ export interface components {
              * @description RFC 4648 standard base64 with `=` padding for the raw SSH signature blob (no SSH-wire framing).
              */
             signature: string;
+            /**
+             * @description Per-signature SK assertion flags byte the signer's secure element actually asserted with. MAY differ from the request `flags` byte (e.g. when the SK could not deliver user verification it MUST clear `0x04` on the assertion). Receivers MUST embed this byte at the `flags` position of the OpenSSH SK signature preimage; verification fails if the request `flags` byte is used instead.
+             * @example 1
+             */
+            flags: number;
             /**
              * @description Monotonic counter the signer's secure element returned for this SK signing operation. Receivers MUST embed this in the OpenSSH SK signature preimage at the position between `flags` and `SHA256(data)`. Successive signatures from the same key handle MUST have strictly increasing counter values.
              * @example 1
@@ -374,7 +379,7 @@ export interface components {
         MailboxSshSignResponsePayloadV1: components["schemas"]["MailboxSshSignResponseSuccessV1"] | components["schemas"]["MailboxSshSignResponseFailureV1"];
         /**
          * MailboxSshSignResponseSuccessV1
-         * @description Success branch of `MailboxSshSignResponsePayloadV1`. Carries the raw SSH signature plus the SK monotonic counter the signer's secure element returned for this signing operation; both are required so the requester can rebuild the OpenSSH SK signature preimage (`SHA256(application) || flags || counter || SHA256(data)`) and verify against the enrolled credential public key.
+         * @description Success branch of `MailboxSshSignResponsePayloadV1`. Carries the raw SSH signature plus the per-signature SK assertion flags byte and monotonic counter the signer's secure element returned for this signing operation; all three are required so the requester can rebuild the OpenSSH SK signature preimage (`SHA256(application) || flags || counter || SHA256(data)`) and verify against the enrolled credential public key.
          */
         MailboxSshSignResponseSuccessV1: {
             /**
@@ -382,6 +387,11 @@ export interface components {
              * @description RFC 4648 standard base64 with `=` padding for the raw SSH signature blob (no SSH-wire framing).
              */
             signature: string;
+            /**
+             * @description Per-signature SK assertion flags byte the signer's secure element actually asserted with. MAY differ from the request `flags` byte (e.g. when the SK could not deliver user verification it MUST clear `0x04` on the assertion). Receivers MUST embed this byte at the `flags` position of the OpenSSH SK signature preimage; verification fails if the request `flags` byte is used instead.
+             * @example 1
+             */
+            flags: number;
             /**
              * @description Monotonic counter the signer's secure element returned for this SK signing operation. Receivers MUST embed this in the OpenSSH SK signature preimage at the position between `flags` and `SHA256(data)`. Successive signatures from the same key handle MUST have strictly increasing counter values.
              * @example 1
@@ -790,7 +800,7 @@ export interface components {
             /** @description 40-character hex fingerprint of the ECDH encryption subkey. */
             encryption_fingerprint?: string;
             /**
-             * @description Per-credential SSH-SK flags byte the approver baked into a newly enrolled SSH security-key credential. Only meaningful when `purpose` is the SSH signing purpose; absent for all other key purposes. The requester MUST persist this value alongside the credential public key and embed it (unchanged) in the OpenSSH SK signature preimage on every subsequent `ssh_auth` / `ssh_sign` verification: `SHA256(application) || flags || counter || SHA256(data)`. Bit `0x01` is "user presence required" and `0x04` is "user verification required" per the OpenSSH SK protocol.
+             * @description Per-credential SSH-SK flags byte the approver baked into a newly enrolled SSH security-key credential. **MUST be present when `purpose` is the SSH signing purpose; absent for all other key purposes.** (The schema cannot express that conditional requirement directly because `MailboxEnrollResponseApprovedV1` is a single monolithic shape with per-type-optional fields like `fingerprint` / `encryption_public_key_hex`; requesters MUST reject SSH-purpose approved responses that omit this field.) The requester MUST persist this byte alongside the credential public key and use it as the request `flags` input on every subsequent `ssh_auth` / `ssh_sign` call. The approver echoes the actual per-signature assertion flags byte back in the success response (see `MailboxSshAuthResponseSuccessV1.flags`); that asserted byte (which MAY differ from this enrollment flags byte when, e.g., the SK could not deliver user verification) is what the requester MUST embed into the OpenSSH SK signature preimage `SHA256(application) || flags || counter || SHA256(data)`. Bit `0x01` is "user presence required" and `0x04` is "user verification required" per the OpenSSH SK protocol.
              * @example 1
              */
             ssh_sk_flags?: number;

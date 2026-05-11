@@ -77,14 +77,15 @@ components:
       title: MailboxSshAuthResponseSuccessV1
       description: >-
         Success branch of `MailboxSshAuthResponsePayloadV1`. Carries the raw
-        SSH signature plus the SK monotonic counter the signer's secure
-        element returned for this signing operation; both are required so
-        the requester can rebuild the OpenSSH SK signature preimage
+        SSH signature plus the per-signature SK assertion flags byte and
+        monotonic counter the signer's secure element returned for this
+        signing operation; all three are required so the requester can
+        rebuild the OpenSSH SK signature preimage
         (`SHA256(application) || flags || counter || SHA256(data)`) and
         verify against the enrolled credential public key.
       type: object
       additionalProperties: false
-      required: [signature, counter]
+      required: [signature, flags, counter]
       properties:
         signature:
           type: string
@@ -92,6 +93,19 @@ components:
           description: >-
             RFC 4648 standard base64 with `=` padding for the raw SSH
             signature blob (no SSH-wire framing).
+        flags:
+          type: integer
+          minimum: 0
+          maximum: 255
+          description: >-
+            Per-signature SK assertion flags byte the signer's secure
+            element actually asserted with. MAY differ from the request
+            `flags` byte (e.g. when the SK could not deliver user
+            verification it MUST clear `0x04` on the assertion). Receivers
+            MUST embed this byte at the `flags` position of the OpenSSH SK
+            signature preimage; verification fails if the request `flags`
+            byte is used instead.
+          example: 1
         counter:
           type: integer
           minimum: 0
@@ -182,14 +196,15 @@ components:
       title: MailboxSshSignResponseSuccessV1
       description: >-
         Success branch of `MailboxSshSignResponsePayloadV1`. Carries the raw
-        SSH signature plus the SK monotonic counter the signer's secure
-        element returned for this signing operation; both are required so
-        the requester can rebuild the OpenSSH SK signature preimage
+        SSH signature plus the per-signature SK assertion flags byte and
+        monotonic counter the signer's secure element returned for this
+        signing operation; all three are required so the requester can
+        rebuild the OpenSSH SK signature preimage
         (`SHA256(application) || flags || counter || SHA256(data)`) and
         verify against the enrolled credential public key.
       type: object
       additionalProperties: false
-      required: [signature, counter]
+      required: [signature, flags, counter]
       properties:
         signature:
           type: string
@@ -197,6 +212,19 @@ components:
           description: >-
             RFC 4648 standard base64 with `=` padding for the raw SSH
             signature blob (no SSH-wire framing).
+        flags:
+          type: integer
+          minimum: 0
+          maximum: 255
+          description: >-
+            Per-signature SK assertion flags byte the signer's secure
+            element actually asserted with. MAY differ from the request
+            `flags` byte (e.g. when the SK could not deliver user
+            verification it MUST clear `0x04` on the assertion). Receivers
+            MUST embed this byte at the `flags` position of the OpenSSH SK
+            signature preimage; verification fails if the request `flags`
+            byte is used instead.
+          example: 1
         counter:
           type: integer
           minimum: 0

@@ -1100,7 +1100,7 @@ public enum Components {
                 }
             }
         }
-        /// Success branch of `MailboxSshAuthResponsePayloadV1`. Carries the raw SSH signature plus the SK monotonic counter the signer's secure element returned for this signing operation; both are required so the requester can rebuild the OpenSSH SK signature preimage (`SHA256(application) || flags || counter || SHA256(data)`) and verify against the enrolled credential public key.
+        /// Success branch of `MailboxSshAuthResponsePayloadV1`. Carries the raw SSH signature plus the per-signature SK assertion flags byte and monotonic counter the signer's secure element returned for this signing operation; all three are required so the requester can rebuild the OpenSSH SK signature preimage (`SHA256(application) || flags || counter || SHA256(data)`) and verify against the enrolled credential public key.
         ///
         /// - Remark: Generated from `#/components/schemas/MailboxSshAuthResponseSuccessV1`.
         public struct MailboxSshAuthResponseSuccessV1: Codable, Hashable, Sendable {
@@ -1108,6 +1108,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/MailboxSshAuthResponseSuccessV1/signature`.
             public var signature: OpenAPIRuntime.Base64EncodedData
+            /// Per-signature SK assertion flags byte the signer's secure element actually asserted with. MAY differ from the request `flags` byte (e.g. when the SK could not deliver user verification it MUST clear `0x04` on the assertion). Receivers MUST embed this byte at the `flags` position of the OpenSSH SK signature preimage; verification fails if the request `flags` byte is used instead.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxSshAuthResponseSuccessV1/flags`.
+            public var flags: Swift.Int
             /// Monotonic counter the signer's secure element returned for this SK signing operation. Receivers MUST embed this in the OpenSSH SK signature preimage at the position between `flags` and `SHA256(data)`. Successive signatures from the same key handle MUST have strictly increasing counter values.
             ///
             /// - Remark: Generated from `#/components/schemas/MailboxSshAuthResponseSuccessV1/counter`.
@@ -1118,19 +1122,23 @@ public enum Components {
             ///
             /// - Parameters:
             ///   - signature: RFC 4648 standard base64 with `=` padding for the raw SSH signature blob (no SSH-wire framing).
+            ///   - flags: Per-signature SK assertion flags byte the signer's secure element actually asserted with. MAY differ from the request `flags` byte (e.g. when the SK could not deliver user verification it MUST clear `0x04` on the assertion). Receivers MUST embed this byte at the `flags` position of the OpenSSH SK signature preimage; verification fails if the request `flags` byte is used instead.
             ///   - counter: Monotonic counter the signer's secure element returned for this SK signing operation. Receivers MUST embed this in the OpenSSH SK signature preimage at the position between `flags` and `SHA256(data)`. Successive signatures from the same key handle MUST have strictly increasing counter values.
             ///   - approval_proof:
             public init(
                 signature: OpenAPIRuntime.Base64EncodedData,
+                flags: Swift.Int,
                 counter: Swift.Int,
                 approval_proof: Components.Schemas.ApprovalAttestedKeyProof? = nil
             ) {
                 self.signature = signature
+                self.flags = flags
                 self.counter = counter
                 self.approval_proof = approval_proof
             }
             public enum CodingKeys: String, CodingKey {
                 case signature
+                case flags
                 case counter
                 case approval_proof
             }
@@ -1139,6 +1147,10 @@ public enum Components {
                 self.signature = try container.decode(
                     OpenAPIRuntime.Base64EncodedData.self,
                     forKey: .signature
+                )
+                self.flags = try container.decode(
+                    Swift.Int.self,
+                    forKey: .flags
                 )
                 self.counter = try container.decode(
                     Swift.Int.self,
@@ -1150,6 +1162,7 @@ public enum Components {
                 )
                 try decoder.ensureNoAdditionalProperties(knownKeys: [
                     "signature",
+                    "flags",
                     "counter",
                     "approval_proof"
                 ])
@@ -1350,7 +1363,7 @@ public enum Components {
                 }
             }
         }
-        /// Success branch of `MailboxSshSignResponsePayloadV1`. Carries the raw SSH signature plus the SK monotonic counter the signer's secure element returned for this signing operation; both are required so the requester can rebuild the OpenSSH SK signature preimage (`SHA256(application) || flags || counter || SHA256(data)`) and verify against the enrolled credential public key.
+        /// Success branch of `MailboxSshSignResponsePayloadV1`. Carries the raw SSH signature plus the per-signature SK assertion flags byte and monotonic counter the signer's secure element returned for this signing operation; all three are required so the requester can rebuild the OpenSSH SK signature preimage (`SHA256(application) || flags || counter || SHA256(data)`) and verify against the enrolled credential public key.
         ///
         /// - Remark: Generated from `#/components/schemas/MailboxSshSignResponseSuccessV1`.
         public struct MailboxSshSignResponseSuccessV1: Codable, Hashable, Sendable {
@@ -1358,6 +1371,10 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/MailboxSshSignResponseSuccessV1/signature`.
             public var signature: OpenAPIRuntime.Base64EncodedData
+            /// Per-signature SK assertion flags byte the signer's secure element actually asserted with. MAY differ from the request `flags` byte (e.g. when the SK could not deliver user verification it MUST clear `0x04` on the assertion). Receivers MUST embed this byte at the `flags` position of the OpenSSH SK signature preimage; verification fails if the request `flags` byte is used instead.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxSshSignResponseSuccessV1/flags`.
+            public var flags: Swift.Int
             /// Monotonic counter the signer's secure element returned for this SK signing operation. Receivers MUST embed this in the OpenSSH SK signature preimage at the position between `flags` and `SHA256(data)`. Successive signatures from the same key handle MUST have strictly increasing counter values.
             ///
             /// - Remark: Generated from `#/components/schemas/MailboxSshSignResponseSuccessV1/counter`.
@@ -1368,19 +1385,23 @@ public enum Components {
             ///
             /// - Parameters:
             ///   - signature: RFC 4648 standard base64 with `=` padding for the raw SSH signature blob (no SSH-wire framing).
+            ///   - flags: Per-signature SK assertion flags byte the signer's secure element actually asserted with. MAY differ from the request `flags` byte (e.g. when the SK could not deliver user verification it MUST clear `0x04` on the assertion). Receivers MUST embed this byte at the `flags` position of the OpenSSH SK signature preimage; verification fails if the request `flags` byte is used instead.
             ///   - counter: Monotonic counter the signer's secure element returned for this SK signing operation. Receivers MUST embed this in the OpenSSH SK signature preimage at the position between `flags` and `SHA256(data)`. Successive signatures from the same key handle MUST have strictly increasing counter values.
             ///   - approval_proof:
             public init(
                 signature: OpenAPIRuntime.Base64EncodedData,
+                flags: Swift.Int,
                 counter: Swift.Int,
                 approval_proof: Components.Schemas.ApprovalAttestedKeyProof? = nil
             ) {
                 self.signature = signature
+                self.flags = flags
                 self.counter = counter
                 self.approval_proof = approval_proof
             }
             public enum CodingKeys: String, CodingKey {
                 case signature
+                case flags
                 case counter
                 case approval_proof
             }
@@ -1389,6 +1410,10 @@ public enum Components {
                 self.signature = try container.decode(
                     OpenAPIRuntime.Base64EncodedData.self,
                     forKey: .signature
+                )
+                self.flags = try container.decode(
+                    Swift.Int.self,
+                    forKey: .flags
                 )
                 self.counter = try container.decode(
                     Swift.Int.self,
@@ -1400,6 +1425,7 @@ public enum Components {
                 )
                 try decoder.ensureNoAdditionalProperties(knownKeys: [
                     "signature",
+                    "flags",
                     "counter",
                     "approval_proof"
                 ])
@@ -2819,7 +2845,7 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/MailboxEnrollResponseApprovedV1/encryption_fingerprint`.
             public var encryption_fingerprint: Swift.String?
-            /// Per-credential SSH-SK flags byte the approver baked into a newly enrolled SSH security-key credential. Only meaningful when `purpose` is the SSH signing purpose; absent for all other key purposes. The requester MUST persist this value alongside the credential public key and embed it (unchanged) in the OpenSSH SK signature preimage on every subsequent `ssh_auth` / `ssh_sign` verification: `SHA256(application) || flags || counter || SHA256(data)`. Bit `0x01` is "user presence required" and `0x04` is "user verification required" per the OpenSSH SK protocol.
+            /// Per-credential SSH-SK flags byte the approver baked into a newly enrolled SSH security-key credential. **MUST be present when `purpose` is the SSH signing purpose; absent for all other key purposes.** (The schema cannot express that conditional requirement directly because `MailboxEnrollResponseApprovedV1` is a single monolithic shape with per-type-optional fields like `fingerprint` / `encryption_public_key_hex`; requesters MUST reject SSH-purpose approved responses that omit this field.) The requester MUST persist this byte alongside the credential public key and use it as the request `flags` input on every subsequent `ssh_auth` / `ssh_sign` call. The approver echoes the actual per-signature assertion flags byte back in the success response (see `MailboxSshAuthResponseSuccessV1.flags`); that asserted byte (which MAY differ from this enrollment flags byte when, e.g., the SK could not deliver user verification) is what the requester MUST embed into the OpenSSH SK signature preimage `SHA256(application) || flags || counter || SHA256(data)`. Bit `0x01` is "user presence required" and `0x04` is "user verification required" per the OpenSSH SK protocol.
             ///
             /// - Remark: Generated from `#/components/schemas/MailboxEnrollResponseApprovedV1/ssh_sk_flags`.
             public var ssh_sk_flags: Swift.Int?
@@ -2841,7 +2867,7 @@ public enum Components {
             ///   - subkey_signature: RFC 4648 standard base64 with `=` padding for the GPG subkey binding signature.
             ///   - encryption_public_key_hex: Lowercase hex-encoded ECDH encryption subkey public key (66 hex chars for P-256 33-byte compressed key).
             ///   - encryption_fingerprint: 40-character hex fingerprint of the ECDH encryption subkey.
-            ///   - ssh_sk_flags: Per-credential SSH-SK flags byte the approver baked into a newly enrolled SSH security-key credential. Only meaningful when `purpose` is the SSH signing purpose; absent for all other key purposes. The requester MUST persist this value alongside the credential public key and embed it (unchanged) in the OpenSSH SK signature preimage on every subsequent `ssh_auth` / `ssh_sign` verification: `SHA256(application) || flags || counter || SHA256(data)`. Bit `0x01` is "user presence required" and `0x04` is "user verification required" per the OpenSSH SK protocol.
+            ///   - ssh_sk_flags: Per-credential SSH-SK flags byte the approver baked into a newly enrolled SSH security-key credential. **MUST be present when `purpose` is the SSH signing purpose; absent for all other key purposes.** (The schema cannot express that conditional requirement directly because `MailboxEnrollResponseApprovedV1` is a single monolithic shape with per-type-optional fields like `fingerprint` / `encryption_public_key_hex`; requesters MUST reject SSH-purpose approved responses that omit this field.) The requester MUST persist this byte alongside the credential public key and use it as the request `flags` input on every subsequent `ssh_auth` / `ssh_sign` call. The approver echoes the actual per-signature assertion flags byte back in the success response (see `MailboxSshAuthResponseSuccessV1.flags`); that asserted byte (which MAY differ from this enrollment flags byte when, e.g., the SK could not deliver user verification) is what the requester MUST embed into the OpenSSH SK signature preimage `SHA256(application) || flags || counter || SHA256(data)`. Bit `0x01` is "user presence required" and `0x04` is "user verification required" per the OpenSSH SK protocol.
             ///   - attestation:
             ///   - approval_proof:
             public init(
