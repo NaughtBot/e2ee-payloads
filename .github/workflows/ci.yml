@@ -1,0 +1,63 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # OpenAPI lint + Go / TypeScript drift / test on Linux. Same job spec
+  # routes through either the self-hosted arc-runners-naughtbot pool
+  # (push, same-repo PRs) or the GitHub-hosted ubuntu-latest pool
+  # (fork PRs) so untrusted contributors cannot execute arbitrary
+  # Makefile / npm commands against organization infrastructure but
+  # still get the full Linux gate. Swift drift + test runs on the
+  # macOS job below.
+  lint-and-go-typescript-trusted:
+    if: >-
+      github.event_name == 'push' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: arc-runners-naughtbot
+    steps:
+      # Org policy requires every action be pinned to a full-length SHA;
+      # the trailing comment carries the human-readable tag for review.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/lint-and-go-typescript
+
+  lint-and-go-typescript-fork:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: ./.github/actions/lint-and-go-typescript
+
+  swift:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Verify Swift drift
+        # The swift-openapi-generator binary is cached under
+        # .swift-openapi-generator/. The first invocation clones and
+        # builds it; subsequent runs reuse the same binary. Scan the
+        # whole generated directory so a new untracked generator output
+        # also fails the gate.
+        run: |
+          make generate-swift
+          dirty=$(git status --porcelain -- swift/Sources/NaughtBotE2EEPayloads 2>/dev/null)
+          if [ -n "$dirty" ]; then
+            echo "Swift generator drift detected. Run 'make generate-swift' and commit the result." >&2
+            printf '%s\n' "$dirty"
+            exit 1
+          fi
+
+      - name: Swift build
+        run: swift build
+
+      - name: Swift test
+        run: swift test
