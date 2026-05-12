@@ -70,7 +70,7 @@ func envelopeAcceptsUnknownType() throws {
 @Test
 func sshSignResponseSuccessOneOf() throws {
     let json = """
-    {"signature":"YWJj"}
+    {"signature":"YWJj","flags":1,"counter":7}
     """.data(using: .utf8)!
 
     let resp = try decoder.decode(
@@ -80,9 +80,89 @@ func sshSignResponseSuccessOneOf() throws {
     switch resp {
     case .MailboxSshSignResponseSuccessV1(let success):
         #expect(!success.signature.data.isEmpty)
+        #expect(success.flags == 1)
+        #expect(success.counter == 7)
     case .MailboxSshSignResponseFailureV1:
         Issue.record("expected success branch, got failure")
     }
+}
+
+// Regression test for NaughtBot/e2ee-payloads#17: the SK monotonic counter
+// and per-signature assertion flags byte must survive a JSON Codable
+// round-trip on the SSH auth success branch. Without these fields the
+// requester cannot rebuild the OpenSSH SK signature preimage
+// `SHA256(application) || flags || counter || SHA256(data)`.
+@Test
+func sshAuthResponseSuccessCounterRoundTrip() throws {
+    let signatureBytes = Data("ssh-sk-sig".utf8)
+    let original = Components.Schemas.MailboxSshAuthResponseSuccessV1(
+        signature: .init(signatureBytes),
+        flags: 1,
+        counter: 7
+    )
+    let encoded = try encoder.encode(original)
+    let encodedString = String(decoding: encoded, as: UTF8.self)
+    #expect(encodedString.contains("\"counter\":7"))
+    #expect(encodedString.contains("\"flags\":1"))
+
+    let decoded = try decoder.decode(
+        Components.Schemas.MailboxSshAuthResponseSuccessV1.self,
+        from: encoded
+    )
+    #expect(decoded.counter == 7)
+    #expect(decoded.flags == 1)
+    #expect(Data(decoded.signature.data) == signatureBytes)
+
+    // Boundary: u32 max counter and u8 max flags round-trip without overflow.
+    let maxOriginal = Components.Schemas.MailboxSshAuthResponseSuccessV1(
+        signature: .init(signatureBytes),
+        flags: 255,
+        counter: 4294967295
+    )
+    let maxEncoded = try encoder.encode(maxOriginal)
+    let maxDecoded = try decoder.decode(
+        Components.Schemas.MailboxSshAuthResponseSuccessV1.self,
+        from: maxEncoded
+    )
+    #expect(maxDecoded.counter == 4294967295)
+    #expect(maxDecoded.flags == 255)
+}
+
+// Regression test for #17: per-credential `ssh_sk_flags` byte on the
+// approved enrollment response. Only meaningful for SSH-SK credentials;
+// must be omitted on the wire when not present.
+@Test
+func enrollResponseApprovedSshSkFlagsRoundTrip() throws {
+    let original = Components.Schemas.MailboxEnrollResponseApprovedV1(
+        status: .approved,
+        id: "550e8400-e29b-41d4-a716-446655440000",
+        public_key_hex: "02a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+        device_key_id: "dev-1",
+        algorithm: "ed25519",
+        ssh_sk_flags: 5
+    )
+    let encoded = try encoder.encode(original)
+    let encodedString = String(decoding: encoded, as: UTF8.self)
+    #expect(encodedString.contains("\"ssh_sk_flags\":5"))
+
+    let decoded = try decoder.decode(
+        Components.Schemas.MailboxEnrollResponseApprovedV1.self,
+        from: encoded
+    )
+    #expect(decoded.ssh_sk_flags == 5)
+
+    // Non-SSH enrollments omit the field; verify nil round-trips.
+    let withoutFlags = Components.Schemas.MailboxEnrollResponseApprovedV1(
+        status: .approved,
+        id: "550e8400-e29b-41d4-a716-446655440000",
+        public_key_hex: "02a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+        device_key_id: "dev-1",
+        algorithm: "ed25519",
+        ssh_sk_flags: nil
+    )
+    let encodedNoFlags = try encoder.encode(withoutFlags)
+    let encodedNoFlagsString = String(decoding: encodedNoFlags, as: UTF8.self)
+    #expect(!encodedNoFlagsString.contains("ssh_sk_flags"))
 }
 
 @Test

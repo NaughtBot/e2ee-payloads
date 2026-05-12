@@ -479,6 +479,9 @@ type MailboxEnrollResponseApprovedV1 struct {
 	// PublicKeyHex Lowercase hex-encoded public key. 66 hex chars for P-256 33-byte compressed key, or 64 hex chars for Ed25519 32-byte key.
 	PublicKeyHex string `json:"public_key_hex"`
 
+	// SshSkFlags Per-credential SSH-SK flags byte the approver baked into a newly enrolled SSH security-key credential. **MUST be present when `purpose` is the SSH signing purpose; absent for all other key purposes.** (The schema cannot express that conditional requirement directly because `MailboxEnrollResponseApprovedV1` is a single monolithic shape with per-type-optional fields like `fingerprint` / `encryption_public_key_hex`; requesters MUST reject SSH-purpose approved responses that omit this field.) The requester MUST persist this byte alongside the credential public key and use it as the request `flags` input on every subsequent `ssh_auth` / `ssh_sign` call. The approver echoes the actual per-signature assertion flags byte back in the success response (see `MailboxSshAuthResponseSuccessV1.flags`); that asserted byte (which MAY differ from this enrollment flags byte when, e.g., the SK could not deliver user verification) is what the requester MUST embed into the OpenSSH SK signature preimage `SHA256(application) || flags || counter || SHA256(data)`. Bit `0x01` is "user presence required" and `0x04` is "user verification required" per the OpenSSH SK protocol.
+	SshSkFlags *int `json:"ssh_sk_flags,omitempty"`
+
 	// Status Enrollment outcome discriminator (`approved`).
 	Status MailboxEnrollResponseApprovedV1Status `json:"status"`
 
@@ -750,10 +753,16 @@ type MailboxSshAuthResponsePayloadV1 struct {
 	union json.RawMessage
 }
 
-// MailboxSshAuthResponseSuccessV1 Success branch of `MailboxSshAuthResponsePayloadV1`.
+// MailboxSshAuthResponseSuccessV1 Success branch of `MailboxSshAuthResponsePayloadV1`. Carries the raw SSH signature plus the per-signature SK assertion flags byte and monotonic counter the signer's secure element returned for this signing operation; all three are required so the requester can rebuild the OpenSSH SK signature preimage (`SHA256(application) || flags || counter || SHA256(data)`) and verify against the enrolled credential public key.
 type MailboxSshAuthResponseSuccessV1 struct {
 	// ApprovalProof Canonical Longfellow approval proof carried inside encrypted approval responses.
 	ApprovalProof *ApprovalAttestedKeyProof `json:"approval_proof,omitempty"`
+
+	// Counter Monotonic counter (u32) the signer's secure element returned for this SK signing operation. Receivers MUST embed this in the OpenSSH SK signature preimage at the position between `flags` and `SHA256(data)` as a 4-byte big-endian unsigned integer. Successive signatures from the same key handle MUST have strictly increasing counter values. The schema declares `format: int64` so 32-bit Go targets can still represent the full u32 range without overflow.
+	Counter int64 `json:"counter"`
+
+	// Flags Per-signature SK assertion flags byte the signer's secure element actually asserted with. Approvers MUST either (a) assert with at least the bits the request `flags` byte asked for (UP=0x01, UV=0x04) and return the resulting byte here, or (b) return a `MailboxSshAuthResponseFailureV1` / `MailboxSshSignResponseFailureV1` with the appropriate signing error code. Approvers MUST NOT return a success response whose asserted flags byte clears bits the requester set; that would silently downgrade the security posture (e.g. UV-required → UP-only) below what the request agreed to. Receivers MUST embed this asserted byte at the `flags` position of the OpenSSH SK signature preimage; verification fails if the request `flags` byte is used instead. Receivers SHOULD additionally verify that every bit set in the request `flags` byte is also set here as belt-and-suspenders defence against a misbehaving approver.
+	Flags int `json:"flags"`
 
 	// Signature RFC 4648 standard base64 with `=` padding for the raw SSH signature blob (no SSH-wire framing).
 	Signature []byte `json:"signature"`
@@ -800,10 +809,16 @@ type MailboxSshSignResponsePayloadV1 struct {
 	union json.RawMessage
 }
 
-// MailboxSshSignResponseSuccessV1 Success branch of `MailboxSshSignResponsePayloadV1`.
+// MailboxSshSignResponseSuccessV1 Success branch of `MailboxSshSignResponsePayloadV1`. Carries the raw SSH signature plus the per-signature SK assertion flags byte and monotonic counter the signer's secure element returned for this signing operation; all three are required so the requester can rebuild the OpenSSH SK signature preimage (`SHA256(application) || flags || counter || SHA256(data)`) and verify against the enrolled credential public key.
 type MailboxSshSignResponseSuccessV1 struct {
 	// ApprovalProof Canonical Longfellow approval proof carried inside encrypted approval responses.
 	ApprovalProof *ApprovalAttestedKeyProof `json:"approval_proof,omitempty"`
+
+	// Counter Monotonic counter (u32) the signer's secure element returned for this SK signing operation. Receivers MUST embed this in the OpenSSH SK signature preimage at the position between `flags` and `SHA256(data)` as a 4-byte big-endian unsigned integer. Successive signatures from the same key handle MUST have strictly increasing counter values. The schema declares `format: int64` so 32-bit Go targets can still represent the full u32 range without overflow.
+	Counter int64 `json:"counter"`
+
+	// Flags Per-signature SK assertion flags byte the signer's secure element actually asserted with. Approvers MUST either (a) assert with at least the bits the request `flags` byte asked for (UP=0x01, UV=0x04) and return the resulting byte here, or (b) return a `MailboxSshAuthResponseFailureV1` / `MailboxSshSignResponseFailureV1` with the appropriate signing error code. Approvers MUST NOT return a success response whose asserted flags byte clears bits the requester set; that would silently downgrade the security posture (e.g. UV-required → UP-only) below what the request agreed to. Receivers MUST embed this asserted byte at the `flags` position of the OpenSSH SK signature preimage; verification fails if the request `flags` byte is used instead. Receivers SHOULD additionally verify that every bit set in the request `flags` byte is also set here as belt-and-suspenders defence against a misbehaving approver.
+	Flags int `json:"flags"`
 
 	// Signature RFC 4648 standard base64 with `=` padding for the raw SSH signature blob (no SSH-wire framing).
 	Signature []byte `json:"signature"`

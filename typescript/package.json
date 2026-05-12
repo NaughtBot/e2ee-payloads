@@ -1,6 +1,6 @@
 {
   "name": "@naughtbot/e2ee-payloads",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Generated TypeScript types for the NaughtBot mailbox envelope and per-type payload schemas.",
   "type": "module",
   "license": "MIT",

@@ -58,7 +58,7 @@ contract instead of failing at the codec layer.
 ### Go
 
 ```sh
-go get github.com/naughtbot/e2ee-payloads/go@v0.1.0
+go get github.com/naughtbot/e2ee-payloads/go@v0.2.0
 ```
 
 ```go
@@ -71,7 +71,7 @@ pushes a matching `go/v<ver>` tag for every release.
 ### Swift
 
 ```swift
-.package(url: "https://github.com/NaughtBot/e2ee-payloads.git", from: "0.1.0")
+.package(url: "https://github.com/NaughtBot/e2ee-payloads.git", from: "0.2.0")
 ```
 
 ```swift
@@ -138,7 +138,7 @@ Migrating them out of core into this repo is a coordinated follow-up
 that touches `mobile/`, `captcha/`, and `core/` simultaneously and is
 tracked separately under the master plan
 ([`NaughtBot/workspace#3`](https://github.com/NaughtBot/workspace/issues/3)).
-For the v0.1.0 series this repo carries the eight new signing /
+For the v0.x series this repo carries the eight new signing /
 decryption / derive / enroll envelope types only; the existing five
 identifiers appear in the `MailboxEnvelopeType` enum so receivers can
 validate against the canonical registry, but their payload schemas
