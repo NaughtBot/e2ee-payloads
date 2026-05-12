@@ -315,12 +315,13 @@ export interface components {
              */
             signature: string;
             /**
-             * @description Per-signature SK assertion flags byte the signer's secure element actually asserted with. MAY differ from the request `flags` byte (e.g. when the SK could not deliver user verification it MUST clear `0x04` on the assertion). Receivers MUST embed this byte at the `flags` position of the OpenSSH SK signature preimage; verification fails if the request `flags` byte is used instead.
+             * @description Per-signature SK assertion flags byte the signer's secure element actually asserted with. Approvers MUST either (a) assert with at least the bits the request `flags` byte asked for (UP=0x01, UV=0x04) and return the resulting byte here, or (b) return a `MailboxSshAuthResponseFailureV1` / `MailboxSshSignResponseFailureV1` with the appropriate signing error code. Approvers MUST NOT return a success response whose asserted flags byte clears bits the requester set; that would silently downgrade the security posture (e.g. UV-required → UP-only) below what the request agreed to. Receivers MUST embed this asserted byte at the `flags` position of the OpenSSH SK signature preimage; verification fails if the request `flags` byte is used instead. Receivers SHOULD additionally verify that every bit set in the request `flags` byte is also set here as belt-and-suspenders defence against a misbehaving approver.
              * @example 1
              */
             flags: number;
             /**
-             * @description Monotonic counter the signer's secure element returned for this SK signing operation. Receivers MUST embed this in the OpenSSH SK signature preimage at the position between `flags` and `SHA256(data)`. Successive signatures from the same key handle MUST have strictly increasing counter values.
+             * Format: int64
+             * @description Monotonic counter (u32) the signer's secure element returned for this SK signing operation. Receivers MUST embed this in the OpenSSH SK signature preimage at the position between `flags` and `SHA256(data)` as a 4-byte big-endian unsigned integer. Successive signatures from the same key handle MUST have strictly increasing counter values. The schema declares `format: int64` so 32-bit Go targets can still represent the full u32 range without overflow.
              * @example 1
              */
             counter: number;
@@ -388,12 +389,13 @@ export interface components {
              */
             signature: string;
             /**
-             * @description Per-signature SK assertion flags byte the signer's secure element actually asserted with. MAY differ from the request `flags` byte (e.g. when the SK could not deliver user verification it MUST clear `0x04` on the assertion). Receivers MUST embed this byte at the `flags` position of the OpenSSH SK signature preimage; verification fails if the request `flags` byte is used instead.
+             * @description Per-signature SK assertion flags byte the signer's secure element actually asserted with. Approvers MUST either (a) assert with at least the bits the request `flags` byte asked for (UP=0x01, UV=0x04) and return the resulting byte here, or (b) return a `MailboxSshAuthResponseFailureV1` / `MailboxSshSignResponseFailureV1` with the appropriate signing error code. Approvers MUST NOT return a success response whose asserted flags byte clears bits the requester set; that would silently downgrade the security posture (e.g. UV-required → UP-only) below what the request agreed to. Receivers MUST embed this asserted byte at the `flags` position of the OpenSSH SK signature preimage; verification fails if the request `flags` byte is used instead. Receivers SHOULD additionally verify that every bit set in the request `flags` byte is also set here as belt-and-suspenders defence against a misbehaving approver.
              * @example 1
              */
             flags: number;
             /**
-             * @description Monotonic counter the signer's secure element returned for this SK signing operation. Receivers MUST embed this in the OpenSSH SK signature preimage at the position between `flags` and `SHA256(data)`. Successive signatures from the same key handle MUST have strictly increasing counter values.
+             * Format: int64
+             * @description Monotonic counter (u32) the signer's secure element returned for this SK signing operation. Receivers MUST embed this in the OpenSSH SK signature preimage at the position between `flags` and `SHA256(data)` as a 4-byte big-endian unsigned integer. Successive signatures from the same key handle MUST have strictly increasing counter values. The schema declares `format: int64` so 32-bit Go targets can still represent the full u32 range without overflow.
              * @example 1
              */
             counter: number;
