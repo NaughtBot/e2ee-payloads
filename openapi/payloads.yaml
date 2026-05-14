@@ -8,7 +8,7 @@ info:
     self-contained document that the Go / Swift / TypeScript generators
     consume. Hand-edited only when adding a new payload surface — bump the
     `components.schemas` table to re-export the new schemas.
-  version: 0.2.0
+  version: 0.3.0
   license:
     name: MIT
 paths: {}
@@ -122,3 +122,17 @@ components:
       $ref: 'payloads/enroll.yaml#/components/schemas/MailboxEnrollResponseApprovedV1'
     MailboxEnrollResponseRejectedV1:
       $ref: 'payloads/enroll.yaml#/components/schemas/MailboxEnrollResponseRejectedV1'
+
+    # ---- payloads/browser_approval.yaml ----------------------------------
+    MailboxBrowserApprovalDecision:
+      $ref: 'payloads/browser_approval.yaml#/components/schemas/MailboxBrowserApprovalDecision'
+    MailboxBrowserApprovalResponseStatus:
+      $ref: 'payloads/browser_approval.yaml#/components/schemas/MailboxBrowserApprovalResponseStatus'
+    MailboxBrowserApprovalBindingFormat:
+      $ref: 'payloads/browser_approval.yaml#/components/schemas/MailboxBrowserApprovalBindingFormat'
+    MailboxBrowserApprovalRequestPayloadV1:
+      $ref: 'payloads/browser_approval.yaml#/components/schemas/MailboxBrowserApprovalRequestPayloadV1'
+    MailboxBrowserApprovalDecisionBindingV1:
+      $ref: 'payloads/browser_approval.yaml#/components/schemas/MailboxBrowserApprovalDecisionBindingV1'
+    MailboxBrowserApprovalResponsePayloadV1:
+      $ref: 'payloads/browser_approval.yaml#/components/schemas/MailboxBrowserApprovalResponsePayloadV1'

@@ -6,6 +6,8 @@ import { describe, it } from "node:test";
 
 import type {
   MailboxAgeUnwrapRequestPayloadV1,
+  MailboxBrowserApprovalDecisionBindingV1,
+  MailboxBrowserApprovalResponsePayloadV1,
   MailboxEnrollResponseApprovedV1,
   MailboxEnrollResponsePayloadV1,
   MailboxEnvelopeV1,
@@ -15,6 +17,9 @@ import type {
   MailboxSshSignResponsePayloadV1,
   MailboxSshSignResponseSuccessV1,
 } from "./index.ts";
+
+const browserApprovalDecisionBindingFixtureJSON =
+  '{"approval_id":"appr_browser_approval_fixture","browser_public_key_algorithm":"ES256","browser_public_key_thumbprint":"sha256:8uLz73VtBwmU5O_Jr3r2StpLrNxW41Oq9p6FwR2C7xA","decided_at":"2026-05-14T19:31:00Z","decision":"approved","expires_at":"2026-05-14T19:35:00Z","nonce":"m4H2YxTjueEXAMPLE","pairing_transcript_hash":"sha256:6f5902ac237024bdd0c176cb93063dc4f1e01e1191450b5f8f457c56f48e1f4f","request_envelope_id":"11111111-2222-4333-8444-555555555555","request_envelope_issued_at":"2026-05-14T19:30:00Z","request_envelope_type":"browser_approval_request","requested_capability":"captcha.browser_credential","requester_client_id":"captcha-service","requester_origin":"https://captcha.naughtbot.com","service_mobile_pairing_id":"pair_9d58fb4c6ff84f46","version":"browser-approval-decision-binding/v1"}';
 
 describe("MailboxEnvelopeV1", () => {
   it("round-trips the literal RFC 3339 issued_at string", () => {
@@ -123,6 +128,57 @@ describe("SSH-SK counter + flags (issue #17)", () => {
     ) as MailboxSshSignResponseSuccessV1;
     assert.equal(parsed.counter, 42);
     assert.equal(parsed.flags, 1);
+  });
+});
+
+describe("MailboxBrowserApprovalDecisionBindingV1", () => {
+  it("matches the cross-language canonical JSON fixture", () => {
+    const binding: MailboxBrowserApprovalDecisionBindingV1 = {
+      approval_id: "appr_browser_approval_fixture",
+      browser_public_key_algorithm: "ES256",
+      browser_public_key_thumbprint:
+        "sha256:8uLz73VtBwmU5O_Jr3r2StpLrNxW41Oq9p6FwR2C7xA",
+      decided_at: "2026-05-14T19:31:00Z",
+      decision: "approved",
+      expires_at: "2026-05-14T19:35:00Z",
+      nonce: "m4H2YxTjueEXAMPLE",
+      pairing_transcript_hash:
+        "sha256:6f5902ac237024bdd0c176cb93063dc4f1e01e1191450b5f8f457c56f48e1f4f",
+      request_envelope_id: "11111111-2222-4333-8444-555555555555",
+      request_envelope_issued_at: "2026-05-14T19:30:00Z",
+      request_envelope_type: "browser_approval_request",
+      requested_capability: "captcha.browser_credential",
+      requester_client_id: "captcha-service",
+      requester_origin: "https://captcha.naughtbot.com",
+      service_mobile_pairing_id: "pair_9d58fb4c6ff84f46",
+      version: "browser-approval-decision-binding/v1",
+    };
+    const json = JSON.stringify(binding);
+    assert.equal(json, browserApprovalDecisionBindingFixtureJSON);
+
+    const response: MailboxBrowserApprovalResponsePayloadV1 = {
+      approval_binding_bytes: Buffer.from(json, "utf8").toString("base64"),
+      approval_binding_format: "browser-approval-decision-binding/v1+json",
+      approval_id: binding.approval_id,
+      approval_signature: Buffer.from(
+        "approval-signature-fixture",
+        "utf8",
+      ).toString("base64"),
+      decided_at: binding.decided_at,
+      decision: binding.decision,
+      request_envelope_id: binding.request_envelope_id,
+      signing_key_id: "mobile-key-browser-approval-1",
+      status: "decided",
+    };
+    const parsed = JSON.parse(
+      JSON.stringify(response),
+    ) as MailboxBrowserApprovalResponsePayloadV1;
+    assert.equal(
+      Buffer.from(parsed.approval_binding_bytes, "base64").toString("utf8"),
+      browserApprovalDecisionBindingFixtureJSON,
+    );
+    assert.equal(parsed.decision, "approved");
+    assert.equal(parsed.status, "decided");
   });
 });
 
