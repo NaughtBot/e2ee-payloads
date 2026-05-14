@@ -15,6 +15,8 @@ import (
 	"github.com/google/uuid"
 )
 
+const browserApprovalDecisionBindingFixtureJSON = `{"approval_id":"appr_browser_approval_fixture","browser_public_key_algorithm":"ES256","browser_public_key_thumbprint":"sha256:8uLz73VtBwmU5O_Jr3r2StpLrNxW41Oq9p6FwR2C7xA","decided_at":"2026-05-14T19:31:00Z","decision":"approved","expires_at":"2026-05-14T19:35:00Z","nonce":"m4H2YxTjueEXAMPLE","pairing_transcript_hash":"sha256:6f5902ac237024bdd0c176cb93063dc4f1e01e1191450b5f8f457c56f48e1f4f","request_envelope_id":"11111111-2222-4333-8444-555555555555","request_envelope_issued_at":"2026-05-14T19:30:00Z","request_envelope_type":"browser_approval_request","requested_capability":"captcha.browser_credential","requester_client_id":"captcha-service","requester_origin":"https://captcha.naughtbot.com","service_mobile_pairing_id":"pair_9d58fb4c6ff84f46","version":"browser-approval-decision-binding/v1"}`
+
 // TestEnvelopeRoundTrip exercises the canonical envelope wrapper: type is
 // a plain string (so unknown values round-trip), payload is preserved as
 // raw JSON (so per-`type` decoders never see int64 widening).
@@ -231,6 +233,73 @@ func TestSshAuthResponseSuccessCounterRoundTrip(t *testing.T) {
 	}
 }
 
+// TestBrowserApprovalDecisionBindingFixture pins the deterministic JSON
+// bytes signed by mobile for the generic browser approval response. The
+// matching Swift and TypeScript tests use the same fixture string.
+func TestBrowserApprovalDecisionBindingFixture(t *testing.T) {
+	t.Parallel()
+
+	requestEnvelopeId, err := uuid.Parse("11111111-2222-4333-8444-555555555555")
+	if err != nil {
+		t.Fatalf("parse request envelope id: %v", err)
+	}
+	binding := MailboxBrowserApprovalDecisionBindingV1{
+		ApprovalId:                 "appr_browser_approval_fixture",
+		BrowserPublicKeyAlgorithm:  "ES256",
+		BrowserPublicKeyThumbprint: "sha256:8uLz73VtBwmU5O_Jr3r2StpLrNxW41Oq9p6FwR2C7xA",
+		DecidedAt:                  "2026-05-14T19:31:00Z",
+		Decision:                   MailboxBrowserApprovalDecisionApproved,
+		ExpiresAt:                  "2026-05-14T19:35:00Z",
+		Nonce:                      "m4H2YxTjueEXAMPLE",
+		PairingTranscriptHash:      "sha256:6f5902ac237024bdd0c176cb93063dc4f1e01e1191450b5f8f457c56f48e1f4f",
+		RequestEnvelopeId:          requestEnvelopeId,
+		RequestEnvelopeIssuedAt:    "2026-05-14T19:30:00Z",
+		RequestEnvelopeType:        MailboxBrowserApprovalDecisionBindingV1RequestEnvelopeTypeBrowserApprovalRequest,
+		RequestedCapability:        "captcha.browser_credential",
+		RequesterClientId:          "captcha-service",
+		RequesterOrigin:            "https://captcha.naughtbot.com",
+		ServiceMobilePairingId:     "pair_9d58fb4c6ff84f46",
+		Version:                    BrowserApprovalDecisionBindingv1,
+	}
+	out, err := json.Marshal(binding)
+	if err != nil {
+		t.Fatalf("marshal binding: %v", err)
+	}
+	if string(out) != browserApprovalDecisionBindingFixtureJSON {
+		t.Fatalf("binding JSON mismatch:\n got: %s\nwant: %s", out, browserApprovalDecisionBindingFixtureJSON)
+	}
+
+	response := MailboxBrowserApprovalResponsePayloadV1{
+		ApprovalBindingBytes:  out,
+		ApprovalBindingFormat: BrowserApprovalDecisionBindingv1Json,
+		ApprovalId:            binding.ApprovalId,
+		ApprovalSignature:     []byte("approval-signature-fixture"),
+		DecidedAt:             binding.DecidedAt,
+		Decision:              binding.Decision,
+		RequestEnvelopeId:     binding.RequestEnvelopeId,
+		SigningKeyId:          "mobile-key-browser-approval-1",
+		Status:                Decided,
+	}
+	responseJSON, err := json.Marshal(response)
+	if err != nil {
+		t.Fatalf("marshal response: %v", err)
+	}
+	if !strings.Contains(string(responseJSON), `"approval_binding_format":"browser-approval-decision-binding/v1+json"`) {
+		t.Errorf("response missing binding format: %s", responseJSON)
+	}
+
+	var roundTrip MailboxBrowserApprovalResponsePayloadV1
+	if err := json.Unmarshal(responseJSON, &roundTrip); err != nil {
+		t.Fatalf("unmarshal response: %v", err)
+	}
+	if string(roundTrip.ApprovalBindingBytes) != browserApprovalDecisionBindingFixtureJSON {
+		t.Errorf("approval binding bytes lost:\n got: %s\nwant: %s", roundTrip.ApprovalBindingBytes, browserApprovalDecisionBindingFixtureJSON)
+	}
+	if string(roundTrip.ApprovalSignature) != "approval-signature-fixture" {
+		t.Errorf("approval signature lost: %q", roundTrip.ApprovalSignature)
+	}
+}
+
 // TestSshSignResponseSuccessCounterRoundTrip is the matching regression
 // test for the `ssh_sign` (e.g. SSH commit-signing) response branch, which
 // shares the same SK preimage construction as `ssh_auth`. Both `flags`
@@ -276,7 +345,7 @@ func TestEnrollResponseApprovedSshSkFlagsRoundTrip(t *testing.T) {
 
 	flags := 5 // 0x05 = user presence + user verification
 	in := MailboxEnrollResponseApprovedV1{
-		Status:       Approved,
+		Status:       MailboxEnrollResponseApprovedV1StatusApproved,
 		Id:           "550e8400-e29b-41d4-a716-446655440000",
 		PublicKeyHex: "02a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
 		DeviceKeyId:  "dev-1",

@@ -104,15 +104,93 @@ func (e KeyPurpose) Valid() bool {
 	}
 }
 
+// Defines values for MailboxBrowserApprovalBindingFormat.
+const (
+	BrowserApprovalDecisionBindingv1Json MailboxBrowserApprovalBindingFormat = "browser-approval-decision-binding/v1+json"
+)
+
+// Valid indicates whether the value is a known member of the MailboxBrowserApprovalBindingFormat enum.
+func (e MailboxBrowserApprovalBindingFormat) Valid() bool {
+	switch e {
+	case BrowserApprovalDecisionBindingv1Json:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MailboxBrowserApprovalDecision.
+const (
+	MailboxBrowserApprovalDecisionApproved MailboxBrowserApprovalDecision = "approved"
+	MailboxBrowserApprovalDecisionDenied   MailboxBrowserApprovalDecision = "denied"
+)
+
+// Valid indicates whether the value is a known member of the MailboxBrowserApprovalDecision enum.
+func (e MailboxBrowserApprovalDecision) Valid() bool {
+	switch e {
+	case MailboxBrowserApprovalDecisionApproved:
+		return true
+	case MailboxBrowserApprovalDecisionDenied:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MailboxBrowserApprovalDecisionBindingV1RequestEnvelopeType.
+const (
+	MailboxBrowserApprovalDecisionBindingV1RequestEnvelopeTypeBrowserApprovalRequest MailboxBrowserApprovalDecisionBindingV1RequestEnvelopeType = "browser_approval_request"
+)
+
+// Valid indicates whether the value is a known member of the MailboxBrowserApprovalDecisionBindingV1RequestEnvelopeType enum.
+func (e MailboxBrowserApprovalDecisionBindingV1RequestEnvelopeType) Valid() bool {
+	switch e {
+	case MailboxBrowserApprovalDecisionBindingV1RequestEnvelopeTypeBrowserApprovalRequest:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MailboxBrowserApprovalDecisionBindingV1Version.
+const (
+	BrowserApprovalDecisionBindingv1 MailboxBrowserApprovalDecisionBindingV1Version = "browser-approval-decision-binding/v1"
+)
+
+// Valid indicates whether the value is a known member of the MailboxBrowserApprovalDecisionBindingV1Version enum.
+func (e MailboxBrowserApprovalDecisionBindingV1Version) Valid() bool {
+	switch e {
+	case BrowserApprovalDecisionBindingv1:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MailboxBrowserApprovalResponseStatus.
+const (
+	Decided MailboxBrowserApprovalResponseStatus = "decided"
+)
+
+// Valid indicates whether the value is a known member of the MailboxBrowserApprovalResponseStatus enum.
+func (e MailboxBrowserApprovalResponseStatus) Valid() bool {
+	switch e {
+	case Decided:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for MailboxEnrollResponseApprovedV1Status.
 const (
-	Approved MailboxEnrollResponseApprovedV1Status = "approved"
+	MailboxEnrollResponseApprovedV1StatusApproved MailboxEnrollResponseApprovedV1Status = "approved"
 )
 
 // Valid indicates whether the value is a known member of the MailboxEnrollResponseApprovedV1Status enum.
 func (e MailboxEnrollResponseApprovedV1Status) Valid() bool {
 	switch e {
-	case Approved:
+	case MailboxEnrollResponseApprovedV1StatusApproved:
 		return true
 	default:
 		return false
@@ -136,49 +214,55 @@ func (e MailboxEnrollResponseRejectedV1Status) Valid() bool {
 
 // Defines values for MailboxEnvelopeType.
 const (
-	AgeUnwrap       MailboxEnvelopeType = "age_unwrap"
-	CaptchaRequest  MailboxEnvelopeType = "captcha_request"
-	CaptchaResponse MailboxEnvelopeType = "captcha_response"
-	Enroll          MailboxEnvelopeType = "enroll"
-	GpgDecrypt      MailboxEnvelopeType = "gpg_decrypt"
-	GpgSign         MailboxEnvelopeType = "gpg_sign"
-	LinkApproval    MailboxEnvelopeType = "link_approval"
-	LinkRejection   MailboxEnvelopeType = "link_rejection"
-	LinkRequest     MailboxEnvelopeType = "link_request"
-	Pkcs11Derive    MailboxEnvelopeType = "pkcs11_derive"
-	Pkcs11Sign      MailboxEnvelopeType = "pkcs11_sign"
-	SshAuth         MailboxEnvelopeType = "ssh_auth"
-	SshSign         MailboxEnvelopeType = "ssh_sign"
+	MailboxEnvelopeTypeAgeUnwrap               MailboxEnvelopeType = "age_unwrap"
+	MailboxEnvelopeTypeBrowserApprovalRequest  MailboxEnvelopeType = "browser_approval_request"
+	MailboxEnvelopeTypeBrowserApprovalResponse MailboxEnvelopeType = "browser_approval_response"
+	MailboxEnvelopeTypeCaptchaRequest          MailboxEnvelopeType = "captcha_request"
+	MailboxEnvelopeTypeCaptchaResponse         MailboxEnvelopeType = "captcha_response"
+	MailboxEnvelopeTypeEnroll                  MailboxEnvelopeType = "enroll"
+	MailboxEnvelopeTypeGpgDecrypt              MailboxEnvelopeType = "gpg_decrypt"
+	MailboxEnvelopeTypeGpgSign                 MailboxEnvelopeType = "gpg_sign"
+	MailboxEnvelopeTypeLinkApproval            MailboxEnvelopeType = "link_approval"
+	MailboxEnvelopeTypeLinkRejection           MailboxEnvelopeType = "link_rejection"
+	MailboxEnvelopeTypeLinkRequest             MailboxEnvelopeType = "link_request"
+	MailboxEnvelopeTypePkcs11Derive            MailboxEnvelopeType = "pkcs11_derive"
+	MailboxEnvelopeTypePkcs11Sign              MailboxEnvelopeType = "pkcs11_sign"
+	MailboxEnvelopeTypeSshAuth                 MailboxEnvelopeType = "ssh_auth"
+	MailboxEnvelopeTypeSshSign                 MailboxEnvelopeType = "ssh_sign"
 )
 
 // Valid indicates whether the value is a known member of the MailboxEnvelopeType enum.
 func (e MailboxEnvelopeType) Valid() bool {
 	switch e {
-	case AgeUnwrap:
+	case MailboxEnvelopeTypeAgeUnwrap:
 		return true
-	case CaptchaRequest:
+	case MailboxEnvelopeTypeBrowserApprovalRequest:
 		return true
-	case CaptchaResponse:
+	case MailboxEnvelopeTypeBrowserApprovalResponse:
 		return true
-	case Enroll:
+	case MailboxEnvelopeTypeCaptchaRequest:
 		return true
-	case GpgDecrypt:
+	case MailboxEnvelopeTypeCaptchaResponse:
 		return true
-	case GpgSign:
+	case MailboxEnvelopeTypeEnroll:
 		return true
-	case LinkApproval:
+	case MailboxEnvelopeTypeGpgDecrypt:
 		return true
-	case LinkRejection:
+	case MailboxEnvelopeTypeGpgSign:
 		return true
-	case LinkRequest:
+	case MailboxEnvelopeTypeLinkApproval:
 		return true
-	case Pkcs11Derive:
+	case MailboxEnvelopeTypeLinkRejection:
 		return true
-	case Pkcs11Sign:
+	case MailboxEnvelopeTypeLinkRequest:
 		return true
-	case SshAuth:
+	case MailboxEnvelopeTypePkcs11Derive:
 		return true
-	case SshSign:
+	case MailboxEnvelopeTypePkcs11Sign:
+		return true
+	case MailboxEnvelopeTypeSshAuth:
+		return true
+	case MailboxEnvelopeTypeSshSign:
 		return true
 	default:
 		return false
@@ -422,6 +506,144 @@ type MailboxAgeUnwrapResponseSuccessV1 struct {
 	// FileKey RFC 4648 standard base64 with `=` padding for the unwrapped age file key.
 	FileKey []byte `json:"file_key"`
 }
+
+// MailboxBrowserApprovalBindingFormat Canonical byte format signed by the mobile approval key.
+type MailboxBrowserApprovalBindingFormat string
+
+// MailboxBrowserApprovalDecision Mobile user's signed approval decision.
+type MailboxBrowserApprovalDecision string
+
+// MailboxBrowserApprovalDecisionBindingV1 Canonical JSON object whose UTF-8 bytes are signed by the mobile approval key. Producers encode these fields in lexicographic property order with no insignificant whitespace and place the resulting bytes in `MailboxBrowserApprovalResponsePayloadV1.approval_binding_bytes`.
+type MailboxBrowserApprovalDecisionBindingV1 struct {
+	// ApprovalId Approval id copied from the request payload.
+	ApprovalId string `json:"approval_id"`
+
+	// BrowserPublicKeyAlgorithm Browser public key algorithm copied from the request payload.
+	BrowserPublicKeyAlgorithm string `json:"browser_public_key_algorithm"`
+
+	// BrowserPublicKeyThumbprint Browser public key thumbprint copied from the request payload.
+	BrowserPublicKeyThumbprint string `json:"browser_public_key_thumbprint"`
+
+	// DecidedAt RFC 3339 UTC timestamp of the mobile decision.
+	DecidedAt string `json:"decided_at"`
+
+	// Decision Mobile user's signed approval decision.
+	Decision MailboxBrowserApprovalDecision `json:"decision"`
+
+	// ExpiresAt Request expiry copied from the request payload.
+	ExpiresAt string `json:"expires_at"`
+
+	// Nonce Nonce copied from the request payload.
+	Nonce string `json:"nonce"`
+
+	// PairingTranscriptHash SHA-256 hash of the service-mobile pairing transcript.
+	PairingTranscriptHash string `json:"pairing_transcript_hash"`
+
+	// RequestEnvelopeId Envelope id of the browser approval request being answered.
+	RequestEnvelopeId openapi_types.UUID `json:"request_envelope_id"`
+
+	// RequestEnvelopeIssuedAt Envelope `issued_at` timestamp of the request being answered.
+	RequestEnvelopeIssuedAt string `json:"request_envelope_issued_at"`
+
+	// RequestEnvelopeType Envelope type of the request being answered.
+	RequestEnvelopeType MailboxBrowserApprovalDecisionBindingV1RequestEnvelopeType `json:"request_envelope_type"`
+
+	// RequestedCapability Requested capability copied from the request payload.
+	RequestedCapability string `json:"requested_capability"`
+
+	// RequesterClientId Requester client id copied from the request payload.
+	RequesterClientId string `json:"requester_client_id"`
+
+	// RequesterOrigin Requester origin copied from the request payload.
+	RequesterOrigin string `json:"requester_origin"`
+
+	// ServiceMobilePairingId Stable id for the service-mobile E2EE mailbox pairing.
+	ServiceMobilePairingId string `json:"service_mobile_pairing_id"`
+
+	// Version Canonical decision binding schema version.
+	Version MailboxBrowserApprovalDecisionBindingV1Version `json:"version"`
+}
+
+// MailboxBrowserApprovalDecisionBindingV1RequestEnvelopeType Envelope type of the request being answered.
+type MailboxBrowserApprovalDecisionBindingV1RequestEnvelopeType string
+
+// MailboxBrowserApprovalDecisionBindingV1Version Canonical decision binding schema version.
+type MailboxBrowserApprovalDecisionBindingV1Version string
+
+// MailboxBrowserApprovalRequestPayloadV1 Request payload for the `browser_approval_request` envelope type. A service requester sends this to the paired mobile device when a browser key needs approval for a generic capability.
+type MailboxBrowserApprovalRequestPayloadV1 struct {
+	// ApprovalId Opaque service-scoped approval id.
+	ApprovalId string `json:"approval_id"`
+
+	// BrowserDisplayName Human-readable browser/device label shown to the mobile user.
+	BrowserDisplayName string `json:"browser_display_name"`
+
+	// BrowserPlatform Best-effort browser platform hint shown to the mobile user.
+	BrowserPlatform string `json:"browser_platform"`
+
+	// BrowserPublicKeyAlgorithm Browser public key algorithm identifier, e.g. `ES256` or `Ed25519`.
+	BrowserPublicKeyAlgorithm string `json:"browser_public_key_algorithm"`
+
+	// BrowserPublicKeyThumbprint Thumbprint of the browser public key being approved. Producers SHOULD use `sha256:<base64url-no-padding>` for JWK thumbprints.
+	BrowserPublicKeyThumbprint string `json:"browser_public_key_thumbprint"`
+
+	// BrowserUserAgent Optional user-agent hint for display and diagnostics.
+	BrowserUserAgent *string `json:"browser_user_agent,omitempty"`
+
+	// ExpiresAt RFC 3339 UTC timestamp after which the request is invalid.
+	ExpiresAt string `json:"expires_at"`
+
+	// IssuedAt RFC 3339 UTC timestamp with canonical `Z` suffix.
+	IssuedAt string `json:"issued_at"`
+
+	// Nonce Opaque nonce bound into the mobile-signed decision.
+	Nonce string `json:"nonce"`
+
+	// RequestedCapability Generic capability requested by the service.
+	RequestedCapability string `json:"requested_capability"`
+
+	// RequesterClientId Service/requester client id that created the approval request.
+	RequesterClientId string `json:"requester_client_id"`
+
+	// RequesterDisplayName Human-readable requester name shown to the mobile user.
+	RequesterDisplayName string `json:"requester_display_name"`
+
+	// RequesterOrigin Origin of the requester that will receive/use the browser credential.
+	RequesterOrigin string `json:"requester_origin"`
+}
+
+// MailboxBrowserApprovalResponsePayloadV1 Response payload for the `browser_approval_response` envelope type. The response carries the mobile decision plus the exact canonical bytes and signature over `MailboxBrowserApprovalDecisionBindingV1`.
+type MailboxBrowserApprovalResponsePayloadV1 struct {
+	// ApprovalBindingBytes RFC 4648 standard base64 with `=` padding for the canonical `MailboxBrowserApprovalDecisionBindingV1` UTF-8 JSON bytes.
+	ApprovalBindingBytes []byte `json:"approval_binding_bytes"`
+
+	// ApprovalBindingFormat Canonical byte format signed by the mobile approval key.
+	ApprovalBindingFormat MailboxBrowserApprovalBindingFormat `json:"approval_binding_format"`
+
+	// ApprovalId Approval id copied from the request payload.
+	ApprovalId string `json:"approval_id"`
+
+	// ApprovalSignature RFC 4648 standard base64 with `=` padding for the signature over `approval_binding_bytes`.
+	ApprovalSignature []byte `json:"approval_signature"`
+
+	// DecidedAt RFC 3339 UTC timestamp of the mobile decision.
+	DecidedAt string `json:"decided_at"`
+
+	// Decision Mobile user's signed approval decision.
+	Decision MailboxBrowserApprovalDecision `json:"decision"`
+
+	// RequestEnvelopeId Envelope id of the browser approval request being answered.
+	RequestEnvelopeId openapi_types.UUID `json:"request_envelope_id"`
+
+	// SigningKeyId Mobile signing key id that produced `approval_signature`.
+	SigningKeyId string `json:"signing_key_id"`
+
+	// Status Response lifecycle status. The signed `decision` carries the approval outcome.
+	Status MailboxBrowserApprovalResponseStatus `json:"status"`
+}
+
+// MailboxBrowserApprovalResponseStatus Response lifecycle status. The signed `decision` carries the approval outcome.
+type MailboxBrowserApprovalResponseStatus string
 
 // MailboxEnrollRequestPayloadV1 Request payload for the `enroll` envelope type. The approver creates a new key for the requested `purpose` and returns its public material.
 type MailboxEnrollRequestPayloadV1 struct {

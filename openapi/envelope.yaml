@@ -117,4 +117,6 @@ components:
         - pkcs11_sign
         - pkcs11_derive
         - enroll
+        - browser_approval_request
+        - browser_approval_response
       example: ssh_sign

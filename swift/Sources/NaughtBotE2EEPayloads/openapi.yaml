@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: NaughtBot e2ee mailbox payloads (bundle root)
   description: Aggregator entry point that re-exports every component schema authored under `openapi/`. The Makefile's `make bundle` target feeds this file to Redocly to produce `openapi/bundled/payloads.yaml`, a single self-contained document that the Go / Swift / TypeScript generators consume. Hand-edited only when adding a new payload surface — bump the `components.schemas` table to re-export the new schemas.
-  version: 0.2.0
+  version: 0.3.0
   license:
     name: MIT
 paths: {}
@@ -63,6 +63,8 @@ components:
         - pkcs11_sign
         - pkcs11_derive
         - enroll
+        - browser_approval_request
+        - browser_approval_response
       example: ssh_sign
     ApprovalChallenge:
       title: ApprovalChallenge
@@ -1037,3 +1039,260 @@ components:
           type: string
           description: Human-readable error message.
           example: User rejected the enrollment
+    MailboxBrowserApprovalDecision:
+      title: MailboxBrowserApprovalDecision
+      description: Mobile user's signed approval decision.
+      type: string
+      enum:
+        - approved
+        - denied
+      example: approved
+    MailboxBrowserApprovalResponseStatus:
+      title: MailboxBrowserApprovalResponseStatus
+      description: Response lifecycle status. The signed `decision` carries the approval outcome.
+      type: string
+      enum:
+        - decided
+      example: decided
+    MailboxBrowserApprovalBindingFormat:
+      title: MailboxBrowserApprovalBindingFormat
+      description: Canonical byte format signed by the mobile approval key.
+      type: string
+      enum:
+        - browser-approval-decision-binding/v1+json
+      example: browser-approval-decision-binding/v1+json
+    MailboxBrowserApprovalRequestPayloadV1:
+      title: MailboxBrowserApprovalRequestPayloadV1
+      description: Request payload for the `browser_approval_request` envelope type. A service requester sends this to the paired mobile device when a browser key needs approval for a generic capability.
+      type: object
+      additionalProperties: false
+      required:
+        - approval_id
+        - browser_display_name
+        - browser_platform
+        - browser_public_key_algorithm
+        - browser_public_key_thumbprint
+        - expires_at
+        - issued_at
+        - nonce
+        - requested_capability
+        - requester_client_id
+        - requester_display_name
+        - requester_origin
+      properties:
+        approval_id:
+          type: string
+          minLength: 1
+          description: Opaque service-scoped approval id.
+          example: appr_2af7b1fb2b5b4b5b8c7e9a0d
+        browser_display_name:
+          type: string
+          minLength: 1
+          description: Human-readable browser/device label shown to the mobile user.
+          example: Chrome on MacBook Pro
+        browser_platform:
+          type: string
+          minLength: 1
+          description: Best-effort browser platform hint shown to the mobile user.
+          example: macOS
+        browser_user_agent:
+          type: string
+          description: Optional user-agent hint for display and diagnostics.
+        browser_public_key_algorithm:
+          type: string
+          minLength: 1
+          description: Browser public key algorithm identifier, e.g. `ES256` or `Ed25519`.
+          example: ES256
+        browser_public_key_thumbprint:
+          type: string
+          minLength: 1
+          description: Thumbprint of the browser public key being approved. Producers SHOULD use `sha256:<base64url-no-padding>` for JWK thumbprints.
+          example: sha256:8uLz73VtBwmU5O_Jr3r2StpLrNxW41Oq9p6FwR2C7xA
+        requested_capability:
+          type: string
+          minLength: 1
+          description: Generic capability requested by the service.
+          example: captcha.browser_credential
+        requester_client_id:
+          type: string
+          minLength: 1
+          description: Service/requester client id that created the approval request.
+          example: captcha-service
+        requester_display_name:
+          type: string
+          minLength: 1
+          description: Human-readable requester name shown to the mobile user.
+          example: NaughtBot Captcha
+        requester_origin:
+          type: string
+          minLength: 1
+          description: Origin of the requester that will receive/use the browser credential.
+          example: https://captcha.naughtbot.com
+        nonce:
+          type: string
+          minLength: 1
+          description: Opaque nonce bound into the mobile-signed decision.
+          example: m4H2YxTjueEXAMPLE
+        issued_at:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$
+          description: RFC 3339 UTC timestamp with canonical `Z` suffix.
+          example: '2026-05-14T19:30:00Z'
+        expires_at:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$
+          description: RFC 3339 UTC timestamp after which the request is invalid.
+          example: '2026-05-14T19:35:00Z'
+    MailboxBrowserApprovalDecisionBindingV1:
+      title: MailboxBrowserApprovalDecisionBindingV1
+      description: Canonical JSON object whose UTF-8 bytes are signed by the mobile approval key. Producers encode these fields in lexicographic property order with no insignificant whitespace and place the resulting bytes in `MailboxBrowserApprovalResponsePayloadV1.approval_binding_bytes`.
+      type: object
+      additionalProperties: false
+      required:
+        - approval_id
+        - browser_public_key_algorithm
+        - browser_public_key_thumbprint
+        - decided_at
+        - decision
+        - expires_at
+        - nonce
+        - pairing_transcript_hash
+        - request_envelope_id
+        - request_envelope_issued_at
+        - request_envelope_type
+        - requested_capability
+        - requester_client_id
+        - requester_origin
+        - service_mobile_pairing_id
+        - version
+      properties:
+        approval_id:
+          type: string
+          minLength: 1
+          description: Approval id copied from the request payload.
+          example: appr_2af7b1fb2b5b4b5b8c7e9a0d
+        browser_public_key_algorithm:
+          type: string
+          minLength: 1
+          description: Browser public key algorithm copied from the request payload.
+          example: ES256
+        browser_public_key_thumbprint:
+          type: string
+          minLength: 1
+          description: Browser public key thumbprint copied from the request payload.
+          example: sha256:8uLz73VtBwmU5O_Jr3r2StpLrNxW41Oq9p6FwR2C7xA
+        decided_at:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$
+          description: RFC 3339 UTC timestamp of the mobile decision.
+          example: '2026-05-14T19:31:00Z'
+        decision:
+          $ref: '#/components/schemas/MailboxBrowserApprovalDecision'
+        expires_at:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$
+          description: Request expiry copied from the request payload.
+          example: '2026-05-14T19:35:00Z'
+        nonce:
+          type: string
+          minLength: 1
+          description: Nonce copied from the request payload.
+          example: m4H2YxTjueEXAMPLE
+        pairing_transcript_hash:
+          type: string
+          pattern: ^sha256:[0-9a-f]{64}$
+          description: SHA-256 hash of the service-mobile pairing transcript.
+          example: sha256:6f5902ac237024bdd0c176cb93063dc4f1e01e1191450b5f8f457c56f48e1f4f
+        request_envelope_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+          description: Envelope id of the browser approval request being answered.
+          example: 11111111-2222-4333-8444-555555555555
+        request_envelope_issued_at:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$
+          description: Envelope `issued_at` timestamp of the request being answered.
+          example: '2026-05-14T19:30:00Z'
+        request_envelope_type:
+          type: string
+          enum:
+            - browser_approval_request
+          description: Envelope type of the request being answered.
+          example: browser_approval_request
+        requested_capability:
+          type: string
+          minLength: 1
+          description: Requested capability copied from the request payload.
+          example: captcha.browser_credential
+        requester_client_id:
+          type: string
+          minLength: 1
+          description: Requester client id copied from the request payload.
+          example: captcha-service
+        requester_origin:
+          type: string
+          minLength: 1
+          description: Requester origin copied from the request payload.
+          example: https://captcha.naughtbot.com
+        service_mobile_pairing_id:
+          type: string
+          minLength: 1
+          description: Stable id for the service-mobile E2EE mailbox pairing.
+          example: pair_9d58fb4c6ff84f46
+        version:
+          type: string
+          enum:
+            - browser-approval-decision-binding/v1
+          description: Canonical decision binding schema version.
+    MailboxBrowserApprovalResponsePayloadV1:
+      title: MailboxBrowserApprovalResponsePayloadV1
+      description: Response payload for the `browser_approval_response` envelope type. The response carries the mobile decision plus the exact canonical bytes and signature over `MailboxBrowserApprovalDecisionBindingV1`.
+      type: object
+      additionalProperties: false
+      required:
+        - approval_binding_bytes
+        - approval_binding_format
+        - approval_id
+        - approval_signature
+        - decided_at
+        - decision
+        - request_envelope_id
+        - signing_key_id
+        - status
+      properties:
+        approval_binding_bytes:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the canonical `MailboxBrowserApprovalDecisionBindingV1` UTF-8 JSON bytes.
+        approval_binding_format:
+          $ref: '#/components/schemas/MailboxBrowserApprovalBindingFormat'
+        approval_id:
+          type: string
+          minLength: 1
+          description: Approval id copied from the request payload.
+          example: appr_2af7b1fb2b5b4b5b8c7e9a0d
+        approval_signature:
+          type: string
+          format: byte
+          description: RFC 4648 standard base64 with `=` padding for the signature over `approval_binding_bytes`.
+        decided_at:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$
+          description: RFC 3339 UTC timestamp of the mobile decision.
+          example: '2026-05-14T19:31:00Z'
+        decision:
+          $ref: '#/components/schemas/MailboxBrowserApprovalDecision'
+        request_envelope_id:
+          type: string
+          format: uuid
+          pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
+          description: Envelope id of the browser approval request being answered.
+          example: 11111111-2222-4333-8444-555555555555
+        signing_key_id:
+          type: string
+          minLength: 1
+          description: Mobile signing key id that produced `approval_signature`.
+          example: mobile-key-browser-approval-1
+        status:
+          $ref: '#/components/schemas/MailboxBrowserApprovalResponseStatus'

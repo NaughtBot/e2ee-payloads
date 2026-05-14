@@ -10,9 +10,11 @@ import Testing
 private let decoder: JSONDecoder = JSONDecoder()
 private let encoder: JSONEncoder = {
     let e = JSONEncoder()
-    e.outputFormatting = [.sortedKeys]
+    e.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
     return e
 }()
+
+private let browserApprovalDecisionBindingFixtureJSON = #"{"approval_id":"appr_browser_approval_fixture","browser_public_key_algorithm":"ES256","browser_public_key_thumbprint":"sha256:8uLz73VtBwmU5O_Jr3r2StpLrNxW41Oq9p6FwR2C7xA","decided_at":"2026-05-14T19:31:00Z","decision":"approved","expires_at":"2026-05-14T19:35:00Z","nonce":"m4H2YxTjueEXAMPLE","pairing_transcript_hash":"sha256:6f5902ac237024bdd0c176cb93063dc4f1e01e1191450b5f8f457c56f48e1f4f","request_envelope_id":"11111111-2222-4333-8444-555555555555","request_envelope_issued_at":"2026-05-14T19:30:00Z","request_envelope_type":"browser_approval_request","requested_capability":"captcha.browser_credential","requester_client_id":"captcha-service","requester_origin":"https://captcha.naughtbot.com","service_mobile_pairing_id":"pair_9d58fb4c6ff84f46","version":"browser-approval-decision-binding/v1"}"#
 
 @Test
 func envelopeRoundTrip() throws {
@@ -126,6 +128,52 @@ func sshAuthResponseSuccessCounterRoundTrip() throws {
     )
     #expect(maxDecoded.counter == 4294967295)
     #expect(maxDecoded.flags == 255)
+}
+
+@Test
+func browserApprovalDecisionBindingFixture() throws {
+    let binding = Components.Schemas.MailboxBrowserApprovalDecisionBindingV1(
+        approval_id: "appr_browser_approval_fixture",
+        browser_public_key_algorithm: "ES256",
+        browser_public_key_thumbprint: "sha256:8uLz73VtBwmU5O_Jr3r2StpLrNxW41Oq9p6FwR2C7xA",
+        decided_at: "2026-05-14T19:31:00Z",
+        decision: .approved,
+        expires_at: "2026-05-14T19:35:00Z",
+        nonce: "m4H2YxTjueEXAMPLE",
+        pairing_transcript_hash: "sha256:6f5902ac237024bdd0c176cb93063dc4f1e01e1191450b5f8f457c56f48e1f4f",
+        request_envelope_id: "11111111-2222-4333-8444-555555555555",
+        request_envelope_issued_at: "2026-05-14T19:30:00Z",
+        request_envelope_type: .browser_approval_request,
+        requested_capability: "captcha.browser_credential",
+        requester_client_id: "captcha-service",
+        requester_origin: "https://captcha.naughtbot.com",
+        service_mobile_pairing_id: "pair_9d58fb4c6ff84f46",
+        version: .browser_hyphen_approval_hyphen_decision_hyphen_binding_sol_v1
+    )
+    let encoded = try encoder.encode(binding)
+    let encodedString = String(decoding: encoded, as: UTF8.self)
+    #expect(encodedString == browserApprovalDecisionBindingFixtureJSON)
+
+    let response = Components.Schemas.MailboxBrowserApprovalResponsePayloadV1(
+        approval_binding_bytes: .init(encoded),
+        approval_binding_format: .browser_hyphen_approval_hyphen_decision_hyphen_binding_sol_v1_plus_json,
+        approval_id: binding.approval_id,
+        approval_signature: .init(Data("approval-signature-fixture".utf8)),
+        decided_at: binding.decided_at,
+        decision: binding.decision,
+        request_envelope_id: binding.request_envelope_id,
+        signing_key_id: "mobile-key-browser-approval-1",
+        status: .decided
+    )
+    let responseEncoded = try encoder.encode(response)
+    let decoded = try decoder.decode(
+        Components.Schemas.MailboxBrowserApprovalResponsePayloadV1.self,
+        from: responseEncoded
+    )
+    #expect(Data(decoded.approval_binding_bytes.data) == encoded)
+    #expect(Data(decoded.approval_signature.data) == Data("approval-signature-fixture".utf8))
+    #expect(decoded.decision == .approved)
+    #expect(decoded.status == .decided)
 }
 
 // Regression test for #17: per-credential `ssh_sk_flags` byte on the

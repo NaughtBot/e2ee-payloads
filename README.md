@@ -58,7 +58,7 @@ contract instead of failing at the codec layer.
 ### Go
 
 ```sh
-go get github.com/naughtbot/e2ee-payloads/go@v0.2.0
+go get github.com/naughtbot/e2ee-payloads/go@v0.3.0
 ```
 
 ```go
@@ -71,7 +71,7 @@ pushes a matching `go/v<ver>` tag for every release.
 ### Swift
 
 ```swift
-.package(url: "https://github.com/NaughtBot/e2ee-payloads.git", from: "0.2.0")
+.package(url: "https://github.com/NaughtBot/e2ee-payloads.git", from: "0.3.0")
 ```
 
 ```swift
