@@ -3083,6 +3083,8 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/MailboxBrowserApprovalRequestPayloadV1/approval_id`.
             public var approval_id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/MailboxBrowserApprovalRequestPayloadV1/approval_challenge`.
+            public var approval_challenge: Components.Schemas.ApprovalChallenge
             /// Human-readable browser/device label shown to the mobile user.
             ///
             /// - Remark: Generated from `#/components/schemas/MailboxBrowserApprovalRequestPayloadV1/browser_display_name`.
@@ -3135,6 +3137,7 @@ public enum Components {
             ///
             /// - Parameters:
             ///   - approval_id: Opaque service-scoped approval id.
+            ///   - approval_challenge:
             ///   - browser_display_name: Human-readable browser/device label shown to the mobile user.
             ///   - browser_platform: Best-effort browser platform hint shown to the mobile user.
             ///   - browser_user_agent: Optional user-agent hint for display and diagnostics.
@@ -3149,6 +3152,7 @@ public enum Components {
             ///   - expires_at: RFC 3339 UTC timestamp after which the request is invalid.
             public init(
                 approval_id: Swift.String,
+                approval_challenge: Components.Schemas.ApprovalChallenge,
                 browser_display_name: Swift.String,
                 browser_platform: Swift.String,
                 browser_user_agent: Swift.String? = nil,
@@ -3163,6 +3167,7 @@ public enum Components {
                 expires_at: Swift.String
             ) {
                 self.approval_id = approval_id
+                self.approval_challenge = approval_challenge
                 self.browser_display_name = browser_display_name
                 self.browser_platform = browser_platform
                 self.browser_user_agent = browser_user_agent
@@ -3178,6 +3183,7 @@ public enum Components {
             }
             public enum CodingKeys: String, CodingKey {
                 case approval_id
+                case approval_challenge
                 case browser_display_name
                 case browser_platform
                 case browser_user_agent
@@ -3196,6 +3202,10 @@ public enum Components {
                 self.approval_id = try container.decode(
                     Swift.String.self,
                     forKey: .approval_id
+                )
+                self.approval_challenge = try container.decode(
+                    Components.Schemas.ApprovalChallenge.self,
+                    forKey: .approval_challenge
                 )
                 self.browser_display_name = try container.decode(
                     Swift.String.self,
@@ -3247,6 +3257,7 @@ public enum Components {
                 )
                 try decoder.ensureNoAdditionalProperties(knownKeys: [
                     "approval_id",
+                    "approval_challenge",
                     "browser_display_name",
                     "browser_platform",
                     "browser_user_agent",
@@ -3498,7 +3509,7 @@ public enum Components {
                 ])
             }
         }
-        /// Response payload for the `browser_approval_response` envelope type. The response carries the mobile decision plus the exact canonical bytes and signature over `MailboxBrowserApprovalDecisionBindingV1`.
+        /// Response payload for the `browser_approval_response` envelope type. The response carries the mobile decision plus the exact canonical bytes and attested-key-zk proof over `MailboxBrowserApprovalDecisionBindingV1`.
         ///
         /// - Remark: Generated from `#/components/schemas/MailboxBrowserApprovalResponsePayloadV1`.
         public struct MailboxBrowserApprovalResponsePayloadV1: Codable, Hashable, Sendable {
@@ -3512,10 +3523,8 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/MailboxBrowserApprovalResponsePayloadV1/approval_id`.
             public var approval_id: Swift.String
-            /// RFC 4648 standard base64 with `=` padding for the signature over `approval_binding_bytes`.
-            ///
-            /// - Remark: Generated from `#/components/schemas/MailboxBrowserApprovalResponsePayloadV1/approval_signature`.
-            public var approval_signature: OpenAPIRuntime.Base64EncodedData
+            /// - Remark: Generated from `#/components/schemas/MailboxBrowserApprovalResponsePayloadV1/approval_proof`.
+            public var approval_proof: Components.Schemas.ApprovalAttestedKeyProof
             /// RFC 3339 UTC timestamp of the mobile decision.
             ///
             /// - Remark: Generated from `#/components/schemas/MailboxBrowserApprovalResponsePayloadV1/decided_at`.
@@ -3526,10 +3535,6 @@ public enum Components {
             ///
             /// - Remark: Generated from `#/components/schemas/MailboxBrowserApprovalResponsePayloadV1/request_envelope_id`.
             public var request_envelope_id: Swift.String
-            /// Mobile signing key id that produced `approval_signature`.
-            ///
-            /// - Remark: Generated from `#/components/schemas/MailboxBrowserApprovalResponsePayloadV1/signing_key_id`.
-            public var signing_key_id: Swift.String
             /// - Remark: Generated from `#/components/schemas/MailboxBrowserApprovalResponsePayloadV1/status`.
             public var status: Components.Schemas.MailboxBrowserApprovalResponseStatus
             /// Creates a new `MailboxBrowserApprovalResponsePayloadV1`.
@@ -3538,42 +3543,38 @@ public enum Components {
             ///   - approval_binding_bytes: RFC 4648 standard base64 with `=` padding for the canonical `MailboxBrowserApprovalDecisionBindingV1` UTF-8 JSON bytes.
             ///   - approval_binding_format:
             ///   - approval_id: Approval id copied from the request payload.
-            ///   - approval_signature: RFC 4648 standard base64 with `=` padding for the signature over `approval_binding_bytes`.
+            ///   - approval_proof:
             ///   - decided_at: RFC 3339 UTC timestamp of the mobile decision.
             ///   - decision:
             ///   - request_envelope_id: Envelope id of the browser approval request being answered.
-            ///   - signing_key_id: Mobile signing key id that produced `approval_signature`.
             ///   - status:
             public init(
                 approval_binding_bytes: OpenAPIRuntime.Base64EncodedData,
                 approval_binding_format: Components.Schemas.MailboxBrowserApprovalBindingFormat,
                 approval_id: Swift.String,
-                approval_signature: OpenAPIRuntime.Base64EncodedData,
+                approval_proof: Components.Schemas.ApprovalAttestedKeyProof,
                 decided_at: Swift.String,
                 decision: Components.Schemas.MailboxBrowserApprovalDecision,
                 request_envelope_id: Swift.String,
-                signing_key_id: Swift.String,
                 status: Components.Schemas.MailboxBrowserApprovalResponseStatus
             ) {
                 self.approval_binding_bytes = approval_binding_bytes
                 self.approval_binding_format = approval_binding_format
                 self.approval_id = approval_id
-                self.approval_signature = approval_signature
+                self.approval_proof = approval_proof
                 self.decided_at = decided_at
                 self.decision = decision
                 self.request_envelope_id = request_envelope_id
-                self.signing_key_id = signing_key_id
                 self.status = status
             }
             public enum CodingKeys: String, CodingKey {
                 case approval_binding_bytes
                 case approval_binding_format
                 case approval_id
-                case approval_signature
+                case approval_proof
                 case decided_at
                 case decision
                 case request_envelope_id
-                case signing_key_id
                 case status
             }
             public init(from decoder: any Decoder) throws {
@@ -3590,9 +3591,9 @@ public enum Components {
                     Swift.String.self,
                     forKey: .approval_id
                 )
-                self.approval_signature = try container.decode(
-                    OpenAPIRuntime.Base64EncodedData.self,
-                    forKey: .approval_signature
+                self.approval_proof = try container.decode(
+                    Components.Schemas.ApprovalAttestedKeyProof.self,
+                    forKey: .approval_proof
                 )
                 self.decided_at = try container.decode(
                     Swift.String.self,
@@ -3606,10 +3607,6 @@ public enum Components {
                     Swift.String.self,
                     forKey: .request_envelope_id
                 )
-                self.signing_key_id = try container.decode(
-                    Swift.String.self,
-                    forKey: .signing_key_id
-                )
                 self.status = try container.decode(
                     Components.Schemas.MailboxBrowserApprovalResponseStatus.self,
                     forKey: .status
@@ -3618,11 +3615,10 @@ public enum Components {
                     "approval_binding_bytes",
                     "approval_binding_format",
                     "approval_id",
-                    "approval_signature",
+                    "approval_proof",
                     "decided_at",
                     "decision",
                     "request_envelope_id",
-                    "signing_key_id",
                     "status"
                 ])
             }

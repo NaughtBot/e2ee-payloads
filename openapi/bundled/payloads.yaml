@@ -1067,6 +1067,7 @@ components:
       type: object
       additionalProperties: false
       required:
+        - approval_challenge
         - approval_id
         - browser_display_name
         - browser_platform
@@ -1085,6 +1086,8 @@ components:
           minLength: 1
           description: Opaque service-scoped approval id.
           example: appr_2af7b1fb2b5b4b5b8c7e9a0d
+        approval_challenge:
+          $ref: '#/components/schemas/ApprovalChallenge'
         browser_display_name:
           type: string
           minLength: 1
@@ -1247,18 +1250,17 @@ components:
           description: Canonical decision binding schema version.
     MailboxBrowserApprovalResponsePayloadV1:
       title: MailboxBrowserApprovalResponsePayloadV1
-      description: Response payload for the `browser_approval_response` envelope type. The response carries the mobile decision plus the exact canonical bytes and signature over `MailboxBrowserApprovalDecisionBindingV1`.
+      description: Response payload for the `browser_approval_response` envelope type. The response carries the mobile decision plus the exact canonical bytes and attested-key-zk proof over `MailboxBrowserApprovalDecisionBindingV1`.
       type: object
       additionalProperties: false
       required:
         - approval_binding_bytes
         - approval_binding_format
         - approval_id
-        - approval_signature
+        - approval_proof
         - decided_at
         - decision
         - request_envelope_id
-        - signing_key_id
         - status
       properties:
         approval_binding_bytes:
@@ -1272,10 +1274,8 @@ components:
           minLength: 1
           description: Approval id copied from the request payload.
           example: appr_2af7b1fb2b5b4b5b8c7e9a0d
-        approval_signature:
-          type: string
-          format: byte
-          description: RFC 4648 standard base64 with `=` padding for the signature over `approval_binding_bytes`.
+        approval_proof:
+          $ref: '#/components/schemas/ApprovalAttestedKeyProof'
         decided_at:
           type: string
           pattern: ^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,9})?Z$
@@ -1289,10 +1289,5 @@ components:
           pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$
           description: Envelope id of the browser approval request being answered.
           example: 11111111-2222-4333-8444-555555555555
-        signing_key_id:
-          type: string
-          minLength: 1
-          description: Mobile signing key id that produced `approval_signature`.
-          example: mobile-key-browser-approval-1
         status:
           $ref: '#/components/schemas/MailboxBrowserApprovalResponseStatus'

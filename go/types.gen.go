@@ -572,6 +572,9 @@ type MailboxBrowserApprovalDecisionBindingV1Version string
 
 // MailboxBrowserApprovalRequestPayloadV1 Request payload for the `browser_approval_request` envelope type. A service requester sends this to the paired mobile device when a browser key needs approval for a generic capability.
 type MailboxBrowserApprovalRequestPayloadV1 struct {
+	// ApprovalChallenge Canonical Longfellow / attested-key-zk approval challenge. Producer sends this inside the request payload; the approver binds it into the approval proof returned in the response payload.
+	ApprovalChallenge ApprovalChallenge `json:"approval_challenge"`
+
 	// ApprovalId Opaque service-scoped approval id.
 	ApprovalId string `json:"approval_id"`
 
@@ -612,7 +615,7 @@ type MailboxBrowserApprovalRequestPayloadV1 struct {
 	RequesterOrigin string `json:"requester_origin"`
 }
 
-// MailboxBrowserApprovalResponsePayloadV1 Response payload for the `browser_approval_response` envelope type. The response carries the mobile decision plus the exact canonical bytes and signature over `MailboxBrowserApprovalDecisionBindingV1`.
+// MailboxBrowserApprovalResponsePayloadV1 Response payload for the `browser_approval_response` envelope type. The response carries the mobile decision plus the exact canonical bytes and attested-key-zk proof over `MailboxBrowserApprovalDecisionBindingV1`.
 type MailboxBrowserApprovalResponsePayloadV1 struct {
 	// ApprovalBindingBytes RFC 4648 standard base64 with `=` padding for the canonical `MailboxBrowserApprovalDecisionBindingV1` UTF-8 JSON bytes.
 	ApprovalBindingBytes []byte `json:"approval_binding_bytes"`
@@ -623,8 +626,8 @@ type MailboxBrowserApprovalResponsePayloadV1 struct {
 	// ApprovalId Approval id copied from the request payload.
 	ApprovalId string `json:"approval_id"`
 
-	// ApprovalSignature RFC 4648 standard base64 with `=` padding for the signature over `approval_binding_bytes`.
-	ApprovalSignature []byte `json:"approval_signature"`
+	// ApprovalProof Canonical Longfellow approval proof carried inside encrypted approval responses.
+	ApprovalProof ApprovalAttestedKeyProof `json:"approval_proof"`
 
 	// DecidedAt RFC 3339 UTC timestamp of the mobile decision.
 	DecidedAt string `json:"decided_at"`
@@ -634,9 +637,6 @@ type MailboxBrowserApprovalResponsePayloadV1 struct {
 
 	// RequestEnvelopeId Envelope id of the browser approval request being answered.
 	RequestEnvelopeId openapi_types.UUID `json:"request_envelope_id"`
-
-	// SigningKeyId Mobile signing key id that produced `approval_signature`.
-	SigningKeyId string `json:"signing_key_id"`
 
 	// Status Response lifecycle status. The signed `decision` carries the approval outcome.
 	Status MailboxBrowserApprovalResponseStatus `json:"status"`

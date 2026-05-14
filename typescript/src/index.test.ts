@@ -5,8 +5,10 @@ import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 
 import type {
+  ApprovalAttestedKeyProof,
   MailboxAgeUnwrapRequestPayloadV1,
   MailboxBrowserApprovalDecisionBindingV1,
+  MailboxBrowserApprovalRequestPayloadV1,
   MailboxBrowserApprovalResponsePayloadV1,
   MailboxEnrollResponseApprovedV1,
   MailboxEnrollResponsePayloadV1,
@@ -133,6 +135,28 @@ describe("SSH-SK counter + flags (issue #17)", () => {
 
 describe("MailboxBrowserApprovalDecisionBindingV1", () => {
   it("matches the cross-language canonical JSON fixture", () => {
+    const challenge = approvalChallengeFixture();
+    const request: MailboxBrowserApprovalRequestPayloadV1 = {
+      approval_challenge: challenge,
+      approval_id: "appr_browser_approval_fixture",
+      browser_display_name: "Chrome on MacBook Pro",
+      browser_platform: "macOS",
+      browser_public_key_algorithm: "ES256",
+      browser_public_key_thumbprint:
+        "sha256:8uLz73VtBwmU5O_Jr3r2StpLrNxW41Oq9p6FwR2C7xA",
+      expires_at: "2026-05-14T19:35:00Z",
+      issued_at: "2026-05-14T19:30:00Z",
+      nonce: "m4H2YxTjueEXAMPLE",
+      requested_capability: "captcha.browser_credential",
+      requester_client_id: "captcha-service",
+      requester_display_name: "NaughtBot Captcha",
+      requester_origin: "https://captcha.naughtbot.com",
+    };
+    const requestParsed = JSON.parse(
+      JSON.stringify(request),
+    ) as MailboxBrowserApprovalRequestPayloadV1;
+    assert.deepEqual(requestParsed.approval_challenge, challenge);
+
     const binding: MailboxBrowserApprovalDecisionBindingV1 = {
       approval_id: "appr_browser_approval_fixture",
       browser_public_key_algorithm: "ES256",
@@ -160,14 +184,10 @@ describe("MailboxBrowserApprovalDecisionBindingV1", () => {
       approval_binding_bytes: Buffer.from(json, "utf8").toString("base64"),
       approval_binding_format: "browser-approval-decision-binding/v1+json",
       approval_id: binding.approval_id,
-      approval_signature: Buffer.from(
-        "approval-signature-fixture",
-        "utf8",
-      ).toString("base64"),
+      approval_proof: approvalProofFixture(),
       decided_at: binding.decided_at,
       decision: binding.decision,
       request_envelope_id: binding.request_envelope_id,
-      signing_key_id: "mobile-key-browser-approval-1",
       status: "decided",
     };
     const parsed = JSON.parse(
@@ -179,8 +199,49 @@ describe("MailboxBrowserApprovalDecisionBindingV1", () => {
     );
     assert.equal(parsed.decision, "approved");
     assert.equal(parsed.status, "decided");
+    assert.equal(
+      Buffer.from(parsed.approval_proof.proof, "base64").toString("utf8"),
+      "browser-approval-proof",
+    );
   });
 });
+
+function approvalChallengeFixture(): ApprovalAttestedKeyProof["challenge"] {
+  return {
+    version: "approval-challenge/v1",
+    nonce: "browser-approval-nonce",
+    request_id: "11111111-2222-4333-8444-555555555555",
+    plaintext_hash:
+      "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  };
+}
+
+function approvalProofFixture(): ApprovalAttestedKeyProof {
+  return {
+    version: "approval-attested-key-proof/v1",
+    challenge: approvalChallengeFixture(),
+    statement: {
+      issuer_public_key_hex:
+        "02aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      app_id_hash_hex:
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      policy_version: 1,
+      now: 1_778_787_060,
+      challenge_nonce_hex:
+        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      audience_hash_hex:
+        "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      approval_hash_hex:
+        "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    },
+    attestation: {
+      version: "approval-attestation/v1",
+      bytes: Buffer.from("attestation-bytes", "utf8").toString("base64"),
+      signature: Buffer.from("attestation-signature", "utf8").toString("base64"),
+    },
+    proof: Buffer.from("browser-approval-proof", "utf8").toString("base64"),
+  };
+}
 
 describe("MailboxGpgDecryptResponseSuccessV1", () => {
   it("requires both session_key and algorithm on success", () => {

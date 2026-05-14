@@ -243,6 +243,34 @@ func TestBrowserApprovalDecisionBindingFixture(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parse request envelope id: %v", err)
 	}
+	challenge := approvalChallengeFixture()
+	request := MailboxBrowserApprovalRequestPayloadV1{
+		ApprovalChallenge:          challenge,
+		ApprovalId:                 "appr_browser_approval_fixture",
+		BrowserDisplayName:         "Chrome on MacBook Pro",
+		BrowserPlatform:            "macOS",
+		BrowserPublicKeyAlgorithm:  "ES256",
+		BrowserPublicKeyThumbprint: "sha256:8uLz73VtBwmU5O_Jr3r2StpLrNxW41Oq9p6FwR2C7xA",
+		ExpiresAt:                  "2026-05-14T19:35:00Z",
+		IssuedAt:                   "2026-05-14T19:30:00Z",
+		Nonce:                      "m4H2YxTjueEXAMPLE",
+		RequestedCapability:        "captcha.browser_credential",
+		RequesterClientId:          "captcha-service",
+		RequesterDisplayName:       "NaughtBot Captcha",
+		RequesterOrigin:            "https://captcha.naughtbot.com",
+	}
+	requestJSON, err := json.Marshal(request)
+	if err != nil {
+		t.Fatalf("marshal request: %v", err)
+	}
+	var requestRoundTrip MailboxBrowserApprovalRequestPayloadV1
+	if err := json.Unmarshal(requestJSON, &requestRoundTrip); err != nil {
+		t.Fatalf("unmarshal request: %v", err)
+	}
+	if requestRoundTrip.ApprovalChallenge != challenge {
+		t.Errorf("approval challenge lost:\n got: %#v\nwant: %#v", requestRoundTrip.ApprovalChallenge, challenge)
+	}
+
 	binding := MailboxBrowserApprovalDecisionBindingV1{
 		ApprovalId:                 "appr_browser_approval_fixture",
 		BrowserPublicKeyAlgorithm:  "ES256",
@@ -273,11 +301,10 @@ func TestBrowserApprovalDecisionBindingFixture(t *testing.T) {
 		ApprovalBindingBytes:  out,
 		ApprovalBindingFormat: BrowserApprovalDecisionBindingv1Json,
 		ApprovalId:            binding.ApprovalId,
-		ApprovalSignature:     []byte("approval-signature-fixture"),
+		ApprovalProof:         approvalProofFixture(),
 		DecidedAt:             binding.DecidedAt,
 		Decision:              binding.Decision,
 		RequestEnvelopeId:     binding.RequestEnvelopeId,
-		SigningKeyId:          "mobile-key-browser-approval-1",
 		Status:                Decided,
 	}
 	responseJSON, err := json.Marshal(response)
@@ -295,8 +322,39 @@ func TestBrowserApprovalDecisionBindingFixture(t *testing.T) {
 	if string(roundTrip.ApprovalBindingBytes) != browserApprovalDecisionBindingFixtureJSON {
 		t.Errorf("approval binding bytes lost:\n got: %s\nwant: %s", roundTrip.ApprovalBindingBytes, browserApprovalDecisionBindingFixtureJSON)
 	}
-	if string(roundTrip.ApprovalSignature) != "approval-signature-fixture" {
-		t.Errorf("approval signature lost: %q", roundTrip.ApprovalSignature)
+	if string(roundTrip.ApprovalProof.Proof) != "browser-approval-proof" {
+		t.Errorf("approval proof lost: %q", roundTrip.ApprovalProof.Proof)
+	}
+}
+
+func approvalChallengeFixture() ApprovalChallenge {
+	return ApprovalChallenge{
+		Version:       ApprovalChallengev1,
+		Nonce:         "browser-approval-nonce",
+		RequestId:     "11111111-2222-4333-8444-555555555555",
+		PlaintextHash: "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+	}
+}
+
+func approvalProofFixture() ApprovalAttestedKeyProof {
+	return ApprovalAttestedKeyProof{
+		Version:   ApprovalAttestedKeyProofv1,
+		Challenge: approvalChallengeFixture(),
+		Statement: ApprovalProofStatement{
+			IssuerPublicKeyHex: "02aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+			AppIdHashHex:       "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+			PolicyVersion:      1,
+			Now:                1778787060,
+			ChallengeNonceHex:  "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+			AudienceHashHex:    "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+			ApprovalHashHex:    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+		},
+		Attestation: ApprovalAttestationV1{
+			Version:   ApprovalAttestationv1,
+			Bytes:     []byte("attestation-bytes"),
+			Signature: []byte("attestation-signature"),
+		},
+		Proof: []byte("browser-approval-proof"),
 	}
 }
 
