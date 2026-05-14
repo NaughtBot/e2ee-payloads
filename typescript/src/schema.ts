@@ -857,6 +857,7 @@ export interface components {
              * @example appr_2af7b1fb2b5b4b5b8c7e9a0d
              */
             approval_id: string;
+            approval_challenge: components["schemas"]["ApprovalChallenge"];
             /**
              * @description Human-readable browser/device label shown to the mobile user.
              * @example Chrome on MacBook Pro
@@ -1001,7 +1002,7 @@ export interface components {
         };
         /**
          * MailboxBrowserApprovalResponsePayloadV1
-         * @description Response payload for the `browser_approval_response` envelope type. The response carries the mobile decision plus the exact canonical bytes and signature over `MailboxBrowserApprovalDecisionBindingV1`.
+         * @description Response payload for the `browser_approval_response` envelope type. The response carries the mobile decision plus the exact canonical bytes and attested-key-zk proof over `MailboxBrowserApprovalDecisionBindingV1`.
          */
         MailboxBrowserApprovalResponsePayloadV1: {
             /**
@@ -1015,11 +1016,7 @@ export interface components {
              * @example appr_2af7b1fb2b5b4b5b8c7e9a0d
              */
             approval_id: string;
-            /**
-             * Format: byte
-             * @description RFC 4648 standard base64 with `=` padding for the signature over `approval_binding_bytes`.
-             */
-            approval_signature: string;
+            approval_proof: components["schemas"]["ApprovalAttestedKeyProof"];
             /**
              * @description RFC 3339 UTC timestamp of the mobile decision.
              * @example 2026-05-14T19:31:00Z
@@ -1032,11 +1029,6 @@ export interface components {
              * @example 11111111-2222-4333-8444-555555555555
              */
             request_envelope_id: string;
-            /**
-             * @description Mobile signing key id that produced `approval_signature`.
-             * @example mobile-key-browser-approval-1
-             */
-            signing_key_id: string;
             status: components["schemas"]["MailboxBrowserApprovalResponseStatus"];
         };
     };

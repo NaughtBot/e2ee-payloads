@@ -127,6 +127,10 @@ $(TS_SRC_DIR)/index.ts: $(OPENAPI_BUNDLE)
 	    '' \
 	    'export type MailboxEnvelopeV1 = components["schemas"]["MailboxEnvelopeV1"];' \
 	    'export type MailboxEnvelopeType = components["schemas"]["MailboxEnvelopeType"];' \
+	    'export type ApprovalChallenge = components["schemas"]["ApprovalChallenge"];' \
+	    'export type ApprovalProofStatement = components["schemas"]["ApprovalProofStatement"];' \
+	    'export type ApprovalAttestationV1 = components["schemas"]["ApprovalAttestationV1"];' \
+	    'export type ApprovalAttestedKeyProof = components["schemas"]["ApprovalAttestedKeyProof"];' \
 	    'export type MailboxSshAuthRequestPayloadV1 = components["schemas"]["MailboxSshAuthRequestPayloadV1"];' \
 	    'export type MailboxSshAuthResponsePayloadV1 = components["schemas"]["MailboxSshAuthResponsePayloadV1"];' \
 	    'export type MailboxSshAuthResponseSuccessV1 = components["schemas"]["MailboxSshAuthResponseSuccessV1"];' \

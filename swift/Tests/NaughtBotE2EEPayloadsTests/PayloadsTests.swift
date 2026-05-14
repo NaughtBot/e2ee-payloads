@@ -132,6 +132,29 @@ func sshAuthResponseSuccessCounterRoundTrip() throws {
 
 @Test
 func browserApprovalDecisionBindingFixture() throws {
+    let challenge = approvalChallengeFixture()
+    let request = Components.Schemas.MailboxBrowserApprovalRequestPayloadV1(
+        approval_id: "appr_browser_approval_fixture",
+        approval_challenge: challenge,
+        browser_display_name: "Chrome on MacBook Pro",
+        browser_platform: "macOS",
+        browser_public_key_algorithm: "ES256",
+        browser_public_key_thumbprint: "sha256:8uLz73VtBwmU5O_Jr3r2StpLrNxW41Oq9p6FwR2C7xA",
+        requested_capability: "captcha.browser_credential",
+        requester_client_id: "captcha-service",
+        requester_display_name: "NaughtBot Captcha",
+        requester_origin: "https://captcha.naughtbot.com",
+        nonce: "m4H2YxTjueEXAMPLE",
+        issued_at: "2026-05-14T19:30:00Z",
+        expires_at: "2026-05-14T19:35:00Z"
+    )
+    let requestEncoded = try encoder.encode(request)
+    let requestDecoded = try decoder.decode(
+        Components.Schemas.MailboxBrowserApprovalRequestPayloadV1.self,
+        from: requestEncoded
+    )
+    #expect(requestDecoded.approval_challenge == challenge)
+
     let binding = Components.Schemas.MailboxBrowserApprovalDecisionBindingV1(
         approval_id: "appr_browser_approval_fixture",
         browser_public_key_algorithm: "ES256",
@@ -158,11 +181,10 @@ func browserApprovalDecisionBindingFixture() throws {
         approval_binding_bytes: .init(encoded),
         approval_binding_format: .browser_hyphen_approval_hyphen_decision_hyphen_binding_sol_v1_plus_json,
         approval_id: binding.approval_id,
-        approval_signature: .init(Data("approval-signature-fixture".utf8)),
+        approval_proof: approvalProofFixture(),
         decided_at: binding.decided_at,
         decision: binding.decision,
         request_envelope_id: binding.request_envelope_id,
-        signing_key_id: "mobile-key-browser-approval-1",
         status: .decided
     )
     let responseEncoded = try encoder.encode(response)
@@ -171,9 +193,40 @@ func browserApprovalDecisionBindingFixture() throws {
         from: responseEncoded
     )
     #expect(Data(decoded.approval_binding_bytes.data) == encoded)
-    #expect(Data(decoded.approval_signature.data) == Data("approval-signature-fixture".utf8))
+    #expect(Data(decoded.approval_proof.proof.data) == Data("browser-approval-proof".utf8))
     #expect(decoded.decision == .approved)
     #expect(decoded.status == .decided)
+}
+
+private func approvalChallengeFixture() -> Components.Schemas.ApprovalChallenge {
+    Components.Schemas.ApprovalChallenge(
+        version: .approval_hyphen_challenge_sol_v1,
+        nonce: "browser-approval-nonce",
+        request_id: "11111111-2222-4333-8444-555555555555",
+        plaintext_hash: "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    )
+}
+
+private func approvalProofFixture() -> Components.Schemas.ApprovalAttestedKeyProof {
+    Components.Schemas.ApprovalAttestedKeyProof(
+        version: .approval_hyphen_attested_hyphen_key_hyphen_proof_sol_v1,
+        challenge: approvalChallengeFixture(),
+        statement: Components.Schemas.ApprovalProofStatement(
+            issuer_public_key_hex: "02aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            app_id_hash_hex: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            policy_version: 1,
+            now: 1_778_787_060,
+            challenge_nonce_hex: "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            audience_hash_hex: "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+            approval_hash_hex: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        ),
+        attestation: Components.Schemas.ApprovalAttestationV1(
+            version: .approval_hyphen_attestation_sol_v1,
+            bytes: .init(Data("attestation-bytes".utf8)),
+            signature: .init(Data("attestation-signature".utf8))
+        ),
+        proof: .init(Data("browser-approval-proof".utf8))
+    )
 }
 
 // Regression test for #17: per-credential `ssh_sk_flags` byte on the
