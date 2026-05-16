@@ -16,6 +16,9 @@ import (
 )
 
 const browserApprovalDecisionBindingFixtureJSON = `{"approval_id":"appr_browser_approval_fixture","browser_public_key_algorithm":"ES256","browser_public_key_thumbprint":"sha256:8uLz73VtBwmU5O_Jr3r2StpLrNxW41Oq9p6FwR2C7xA","decided_at":"2026-05-14T19:31:00Z","decision":"approved","expires_at":"2026-05-14T19:35:00Z","nonce":"m4H2YxTjueEXAMPLE","pairing_transcript_hash":"sha256:6f5902ac237024bdd0c176cb93063dc4f1e01e1191450b5f8f457c56f48e1f4f","request_envelope_id":"11111111-2222-4333-8444-555555555555","request_envelope_issued_at":"2026-05-14T19:30:00Z","request_envelope_type":"browser_approval_request","requested_capability":"captcha.browser_credential","requester_client_id":"captcha-service","requester_origin":"https://captcha.naughtbot.com","service_mobile_pairing_id":"pair_9d58fb4c6ff84f46","version":"browser-approval-decision-binding/v1"}`
+const firstPartyRegisterActionFixtureJSON = `{"action_type":"relying_party.register","client_secret_returned_once":true,"confidential_client_audience":"verify.api","confidential_client_scopes":["verify:proof"],"display_name":"Customer Portal","origin":"https://customer.example","public_client_scopes":["openid","offline_access","mailbox:pairing:start"],"redirect_uris":["https://customer.example/oauth/callback"]}`
+const firstPartyRegisterActionFixtureHash = "sha256:9d235424c61b5923caae6be03894226a09b80a4cc28d015dc7ac6260424ed1d7"
+const firstPartyDecisionBindingFixtureJSON = `{"action_type":"relying_party.register","approving_device_id":"33333333-4444-4555-8666-777777777777","approving_device_signing_key_jkt":"uJx87scLEhI5vT1YdtXx5ERw2IW0aP2mMNJ1lUu1Dx4","canonical_action_hash":"sha256:9d235424c61b5923caae6be03894226a09b80a4cc28d015dc7ac6260424ed1d7","decided_at":"2026-05-16T20:41:00Z","decision":"approved","expires_at":"2026-05-16T20:45:00Z","intent_id":"pai_first_party_fixture","nonce":"first-party-nonce-fixture","request_envelope_id":"11111111-2222-4333-8444-555555555555","request_envelope_issued_at":"2026-05-16T20:40:00Z","request_envelope_type":"first_party_request","request_id":"fpr_first_party_fixture","version":"first-party-privileged-action-decision-binding/v1"}`
 
 // TestEnvelopeRoundTrip exercises the canonical envelope wrapper: type is
 // a plain string (so unknown values round-trip), payload is preserved as
@@ -305,7 +308,7 @@ func TestBrowserApprovalDecisionBindingFixture(t *testing.T) {
 		DecidedAt:             binding.DecidedAt,
 		Decision:              binding.Decision,
 		RequestEnvelopeId:     binding.RequestEnvelopeId,
-		Status:                Decided,
+		Status:                MailboxBrowserApprovalResponseStatusDecided,
 	}
 	responseJSON, err := json.Marshal(response)
 	if err != nil {
@@ -324,6 +327,134 @@ func TestBrowserApprovalDecisionBindingFixture(t *testing.T) {
 	}
 	if string(roundTrip.ApprovalProof.Proof) != "browser-approval-proof" {
 		t.Errorf("approval proof lost: %q", roundTrip.ApprovalProof.Proof)
+	}
+}
+
+// TestFirstPartyPrivilegedActionFixture pins the canonical action JSON and
+// signed decision binding used by backend-created first-party approval
+// requests. The matching Swift and TypeScript tests use the same fixture
+// strings.
+func TestFirstPartyPrivilegedActionFixture(t *testing.T) {
+	t.Parallel()
+
+	requestEnvelopeId, err := uuid.Parse("11111111-2222-4333-8444-555555555555")
+	if err != nil {
+		t.Fatalf("parse request envelope id: %v", err)
+	}
+	approvingDeviceId, err := uuid.Parse("33333333-4444-4555-8666-777777777777")
+	if err != nil {
+		t.Fatalf("parse approving device id: %v", err)
+	}
+
+	action := MailboxFirstPartyRelyingPartyRegisterActionV1{
+		ActionType:                 RelyingPartyRegister,
+		ClientSecretReturnedOnce:   true,
+		ConfidentialClientAudience: "verify.api",
+		ConfidentialClientScopes:   []string{"verify:proof"},
+		DisplayName:                "Customer Portal",
+		Origin:                     "https://customer.example",
+		PublicClientScopes:         []string{"openid", "offline_access", "mailbox:pairing:start"},
+		RedirectUris:               []string{"https://customer.example/oauth/callback"},
+	}
+	actionEncoded, err := json.Marshal(action)
+	if err != nil {
+		t.Fatalf("marshal action: %v", err)
+	}
+	if string(actionEncoded) != firstPartyRegisterActionFixtureJSON {
+		t.Fatalf("canonical action JSON mismatch:\n got %s\nwant %s", actionEncoded, firstPartyRegisterActionFixtureJSON)
+	}
+
+	var actionUnion MailboxFirstPartyPrivilegedAction
+	if err := actionUnion.FromMailboxFirstPartyRelyingPartyRegisterActionV1(action); err != nil {
+		t.Fatalf("wrap action union: %v", err)
+	}
+	request := MailboxFirstPartyRequestPayloadV1{
+		ExpiresAt: "2026-05-16T20:45:00Z",
+		IssuedAt:  "2026-05-16T20:40:00Z",
+		Nonce:     "first-party-nonce-fixture",
+		PrivilegedAction: MailboxFirstPartyPrivilegedActionRequestV1{
+			Action:               actionUnion,
+			ActionType:           MailboxFirstPartyPrivilegedActionTypeRelyingPartyRegister,
+			CanonicalActionBytes: []byte(firstPartyRegisterActionFixtureJSON),
+			CanonicalActionHash:  firstPartyRegisterActionFixtureHash,
+			CreatedAt:            "2026-05-16T20:40:00Z",
+			InitiatingClientId:   "naughtbot-console",
+			InitiatingDpopJkt:    "2oNQXcW2Upi5b1xHZQW1Yf3N0aYVnX_Jf7mRiS7Jm8A",
+			IntentId:             "pai_first_party_fixture",
+		},
+		RequestId:   "fpr_first_party_fixture",
+		RequestKind: PrivilegedActionApproval,
+	}
+	requestEncoded, err := json.Marshal(request)
+	if err != nil {
+		t.Fatalf("marshal request: %v", err)
+	}
+	var requestDecoded MailboxFirstPartyRequestPayloadV1
+	if err := json.Unmarshal(requestEncoded, &requestDecoded); err != nil {
+		t.Fatalf("unmarshal request: %v", err)
+	}
+	decodedAction, err := requestDecoded.PrivilegedAction.Action.AsMailboxFirstPartyRelyingPartyRegisterActionV1()
+	if err != nil {
+		t.Fatalf("decode action union: %v", err)
+	}
+	if decodedAction.Origin != action.Origin {
+		t.Errorf("decoded action origin = %q, want %q", decodedAction.Origin, action.Origin)
+	}
+	if string(requestDecoded.PrivilegedAction.CanonicalActionBytes) != firstPartyRegisterActionFixtureJSON {
+		t.Errorf("canonical action bytes lost: %q", requestDecoded.PrivilegedAction.CanonicalActionBytes)
+	}
+
+	binding := MailboxFirstPartyPrivilegedActionDecisionBindingV1{
+		ActionType:                   MailboxFirstPartyPrivilegedActionTypeRelyingPartyRegister,
+		ApprovingDeviceId:            approvingDeviceId,
+		ApprovingDeviceSigningKeyJkt: "uJx87scLEhI5vT1YdtXx5ERw2IW0aP2mMNJ1lUu1Dx4",
+		CanonicalActionHash:          firstPartyRegisterActionFixtureHash,
+		DecidedAt:                    "2026-05-16T20:41:00Z",
+		Decision:                     Approved,
+		ExpiresAt:                    "2026-05-16T20:45:00Z",
+		IntentId:                     "pai_first_party_fixture",
+		Nonce:                        "first-party-nonce-fixture",
+		RequestEnvelopeId:            requestEnvelopeId,
+		RequestEnvelopeIssuedAt:      "2026-05-16T20:40:00Z",
+		RequestEnvelopeType:          FirstPartyRequest,
+		RequestId:                    "fpr_first_party_fixture",
+		Version:                      FirstPartyPrivilegedActionDecisionBindingv1,
+	}
+	bindingEncoded, err := json.Marshal(binding)
+	if err != nil {
+		t.Fatalf("marshal binding: %v", err)
+	}
+	if string(bindingEncoded) != firstPartyDecisionBindingFixtureJSON {
+		t.Fatalf("canonical binding JSON mismatch:\n got %s\nwant %s", bindingEncoded, firstPartyDecisionBindingFixtureJSON)
+	}
+
+	response := MailboxFirstPartyResponsePayloadV1{
+		ApprovalBindingBytes:         bindingEncoded,
+		ApprovalBindingFormat:        FirstPartyPrivilegedActionDecisionBindingv1Json,
+		ApprovalSignature:            []byte("first-party-signature"),
+		ApprovalSignatureAlgorithm:   "ES256",
+		ApprovingDeviceId:            approvingDeviceId,
+		ApprovingDeviceSigningKeyJkt: "uJx87scLEhI5vT1YdtXx5ERw2IW0aP2mMNJ1lUu1Dx4",
+		DecidedAt:                    binding.DecidedAt,
+		Decision:                     binding.Decision,
+		IntentId:                     binding.IntentId,
+		RequestEnvelopeId:            requestEnvelopeId,
+		RequestId:                    binding.RequestId,
+		Status:                       MailboxFirstPartyResponseStatusDecided,
+	}
+	responseEncoded, err := json.Marshal(response)
+	if err != nil {
+		t.Fatalf("marshal response: %v", err)
+	}
+	var responseDecoded MailboxFirstPartyResponsePayloadV1
+	if err := json.Unmarshal(responseEncoded, &responseDecoded); err != nil {
+		t.Fatalf("unmarshal response: %v", err)
+	}
+	if string(responseDecoded.ApprovalBindingBytes) != firstPartyDecisionBindingFixtureJSON {
+		t.Errorf("approval binding bytes lost: %q", responseDecoded.ApprovalBindingBytes)
+	}
+	if string(responseDecoded.ApprovalSignature) != "first-party-signature" {
+		t.Errorf("approval signature lost: %q", responseDecoded.ApprovalSignature)
 	}
 }
 

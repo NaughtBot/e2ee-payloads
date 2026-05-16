@@ -169,13 +169,13 @@ func (e MailboxBrowserApprovalDecisionBindingV1Version) Valid() bool {
 
 // Defines values for MailboxBrowserApprovalResponseStatus.
 const (
-	Decided MailboxBrowserApprovalResponseStatus = "decided"
+	MailboxBrowserApprovalResponseStatusDecided MailboxBrowserApprovalResponseStatus = "decided"
 )
 
 // Valid indicates whether the value is a known member of the MailboxBrowserApprovalResponseStatus enum.
 func (e MailboxBrowserApprovalResponseStatus) Valid() bool {
 	switch e {
-	case Decided:
+	case MailboxBrowserApprovalResponseStatusDecided:
 		return true
 	default:
 		return false
@@ -220,6 +220,8 @@ const (
 	MailboxEnvelopeTypeCaptchaRequest          MailboxEnvelopeType = "captcha_request"
 	MailboxEnvelopeTypeCaptchaResponse         MailboxEnvelopeType = "captcha_response"
 	MailboxEnvelopeTypeEnroll                  MailboxEnvelopeType = "enroll"
+	MailboxEnvelopeTypeFirstPartyRequest       MailboxEnvelopeType = "first_party_request"
+	MailboxEnvelopeTypeFirstPartyResponse      MailboxEnvelopeType = "first_party_response"
 	MailboxEnvelopeTypeGpgDecrypt              MailboxEnvelopeType = "gpg_decrypt"
 	MailboxEnvelopeTypeGpgSign                 MailboxEnvelopeType = "gpg_sign"
 	MailboxEnvelopeTypeLinkApproval            MailboxEnvelopeType = "link_approval"
@@ -245,6 +247,10 @@ func (e MailboxEnvelopeType) Valid() bool {
 	case MailboxEnvelopeTypeCaptchaResponse:
 		return true
 	case MailboxEnvelopeTypeEnroll:
+		return true
+	case MailboxEnvelopeTypeFirstPartyRequest:
+		return true
+	case MailboxEnvelopeTypeFirstPartyResponse:
 		return true
 	case MailboxEnvelopeTypeGpgDecrypt:
 		return true
@@ -278,6 +284,183 @@ const (
 func (e MailboxEnvelopeV1V) Valid() bool {
 	switch e {
 	case MailboxEnvelopeV1VN1:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MailboxFirstPartyApprovalBindingFormat.
+const (
+	FirstPartyPrivilegedActionDecisionBindingv1Json MailboxFirstPartyApprovalBindingFormat = "first-party-privileged-action-decision-binding/v1+json"
+)
+
+// Valid indicates whether the value is a known member of the MailboxFirstPartyApprovalBindingFormat enum.
+func (e MailboxFirstPartyApprovalBindingFormat) Valid() bool {
+	switch e {
+	case FirstPartyPrivilegedActionDecisionBindingv1Json:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MailboxFirstPartyApprovalDecision.
+const (
+	Approved MailboxFirstPartyApprovalDecision = "approved"
+	Denied   MailboxFirstPartyApprovalDecision = "denied"
+)
+
+// Valid indicates whether the value is a known member of the MailboxFirstPartyApprovalDecision enum.
+func (e MailboxFirstPartyApprovalDecision) Valid() bool {
+	switch e {
+	case Approved:
+		return true
+	case Denied:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MailboxFirstPartyDeviceRevokeOtherActionV1ActionType.
+const (
+	MailboxFirstPartyDeviceRevokeOtherActionV1ActionTypeDeviceRevokeOther MailboxFirstPartyDeviceRevokeOtherActionV1ActionType = "device.revoke_other"
+)
+
+// Valid indicates whether the value is a known member of the MailboxFirstPartyDeviceRevokeOtherActionV1ActionType enum.
+func (e MailboxFirstPartyDeviceRevokeOtherActionV1ActionType) Valid() bool {
+	switch e {
+	case MailboxFirstPartyDeviceRevokeOtherActionV1ActionTypeDeviceRevokeOther:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MailboxFirstPartyDeviceRevokeOtherActionV1TargetDeviceType.
+const (
+	Android MailboxFirstPartyDeviceRevokeOtherActionV1TargetDeviceType = "android"
+	Ios     MailboxFirstPartyDeviceRevokeOtherActionV1TargetDeviceType = "ios"
+)
+
+// Valid indicates whether the value is a known member of the MailboxFirstPartyDeviceRevokeOtherActionV1TargetDeviceType enum.
+func (e MailboxFirstPartyDeviceRevokeOtherActionV1TargetDeviceType) Valid() bool {
+	switch e {
+	case Android:
+		return true
+	case Ios:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MailboxFirstPartyPrivilegedActionDecisionBindingV1RequestEnvelopeType.
+const (
+	FirstPartyRequest MailboxFirstPartyPrivilegedActionDecisionBindingV1RequestEnvelopeType = "first_party_request"
+)
+
+// Valid indicates whether the value is a known member of the MailboxFirstPartyPrivilegedActionDecisionBindingV1RequestEnvelopeType enum.
+func (e MailboxFirstPartyPrivilegedActionDecisionBindingV1RequestEnvelopeType) Valid() bool {
+	switch e {
+	case FirstPartyRequest:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MailboxFirstPartyPrivilegedActionDecisionBindingV1Version.
+const (
+	FirstPartyPrivilegedActionDecisionBindingv1 MailboxFirstPartyPrivilegedActionDecisionBindingV1Version = "first-party-privileged-action-decision-binding/v1"
+)
+
+// Valid indicates whether the value is a known member of the MailboxFirstPartyPrivilegedActionDecisionBindingV1Version enum.
+func (e MailboxFirstPartyPrivilegedActionDecisionBindingV1Version) Valid() bool {
+	switch e {
+	case FirstPartyPrivilegedActionDecisionBindingv1:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MailboxFirstPartyPrivilegedActionType.
+const (
+	MailboxFirstPartyPrivilegedActionTypeDeviceRevokeOther        MailboxFirstPartyPrivilegedActionType = "device.revoke_other"
+	MailboxFirstPartyPrivilegedActionTypeRelyingPartyRegister     MailboxFirstPartyPrivilegedActionType = "relying_party.register"
+	MailboxFirstPartyPrivilegedActionTypeRelyingPartyRotateSecret MailboxFirstPartyPrivilegedActionType = "relying_party.rotate_secret"
+)
+
+// Valid indicates whether the value is a known member of the MailboxFirstPartyPrivilegedActionType enum.
+func (e MailboxFirstPartyPrivilegedActionType) Valid() bool {
+	switch e {
+	case MailboxFirstPartyPrivilegedActionTypeDeviceRevokeOther:
+		return true
+	case MailboxFirstPartyPrivilegedActionTypeRelyingPartyRegister:
+		return true
+	case MailboxFirstPartyPrivilegedActionTypeRelyingPartyRotateSecret:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MailboxFirstPartyRelyingPartyRegisterActionV1ActionType.
+const (
+	RelyingPartyRegister MailboxFirstPartyRelyingPartyRegisterActionV1ActionType = "relying_party.register"
+)
+
+// Valid indicates whether the value is a known member of the MailboxFirstPartyRelyingPartyRegisterActionV1ActionType enum.
+func (e MailboxFirstPartyRelyingPartyRegisterActionV1ActionType) Valid() bool {
+	switch e {
+	case RelyingPartyRegister:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MailboxFirstPartyRelyingPartyRotateSecretActionV1ActionType.
+const (
+	RelyingPartyRotateSecret MailboxFirstPartyRelyingPartyRotateSecretActionV1ActionType = "relying_party.rotate_secret"
+)
+
+// Valid indicates whether the value is a known member of the MailboxFirstPartyRelyingPartyRotateSecretActionV1ActionType enum.
+func (e MailboxFirstPartyRelyingPartyRotateSecretActionV1ActionType) Valid() bool {
+	switch e {
+	case RelyingPartyRotateSecret:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MailboxFirstPartyRequestKind.
+const (
+	PrivilegedActionApproval MailboxFirstPartyRequestKind = "privileged_action_approval"
+)
+
+// Valid indicates whether the value is a known member of the MailboxFirstPartyRequestKind enum.
+func (e MailboxFirstPartyRequestKind) Valid() bool {
+	switch e {
+	case PrivilegedActionApproval:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for MailboxFirstPartyResponseStatus.
+const (
+	MailboxFirstPartyResponseStatusDecided MailboxFirstPartyResponseStatus = "decided"
+)
+
+// Valid indicates whether the value is a known member of the MailboxFirstPartyResponseStatus enum.
+func (e MailboxFirstPartyResponseStatus) Valid() bool {
+	switch e {
+	case MailboxFirstPartyResponseStatusDecided:
 		return true
 	default:
 		return false
@@ -760,6 +943,248 @@ type MailboxEnvelopeV1 struct {
 
 // MailboxEnvelopeV1V Envelope version. Receivers reject unknown versions.
 type MailboxEnvelopeV1V int
+
+// MailboxFirstPartyApprovalBindingFormat Canonical byte format signed by the approving device key.
+type MailboxFirstPartyApprovalBindingFormat string
+
+// MailboxFirstPartyApprovalDecision Mobile user's signed decision for a first-party request.
+type MailboxFirstPartyApprovalDecision string
+
+// MailboxFirstPartyDeviceRevokeOtherActionV1 Canonical action details for `device.revoke_other`. Approval authorizes revoking another active device on the same user account.
+type MailboxFirstPartyDeviceRevokeOtherActionV1 struct {
+	// ActionType Discriminator for this privileged action payload.
+	ActionType MailboxFirstPartyDeviceRevokeOtherActionV1ActionType `json:"action_type"`
+
+	// RevokePairings Whether approval cascades revocation to pairings involving the target device.
+	RevokePairings bool `json:"revoke_pairings"`
+
+	// RevokeRefreshTokens Whether approval revokes refresh-token families bound to the target device.
+	RevokeRefreshTokens bool `json:"revoke_refresh_tokens"`
+
+	// TargetDeviceCreatedAt RFC 3339 UTC creation timestamp for the target device.
+	TargetDeviceCreatedAt string `json:"target_device_created_at"`
+
+	// TargetDeviceId Device id that will be revoked.
+	TargetDeviceId openapi_types.UUID `json:"target_device_id"`
+
+	// TargetDeviceName Optional human-readable device name shown to the user.
+	TargetDeviceName *string `json:"target_device_name,omitempty"`
+
+	// TargetDeviceType Registered platform type for the target device.
+	TargetDeviceType MailboxFirstPartyDeviceRevokeOtherActionV1TargetDeviceType `json:"target_device_type"`
+}
+
+// MailboxFirstPartyDeviceRevokeOtherActionV1ActionType Discriminator for this privileged action payload.
+type MailboxFirstPartyDeviceRevokeOtherActionV1ActionType string
+
+// MailboxFirstPartyDeviceRevokeOtherActionV1TargetDeviceType Registered platform type for the target device.
+type MailboxFirstPartyDeviceRevokeOtherActionV1TargetDeviceType string
+
+// MailboxFirstPartyPrivilegedAction Typed canonical privileged action details shown on mobile.
+type MailboxFirstPartyPrivilegedAction struct {
+	union json.RawMessage
+}
+
+// MailboxFirstPartyPrivilegedActionDecisionBindingV1 Canonical JSON object whose UTF-8 bytes are signed by the approving device key. Producers encode these fields in lexicographic property order with no insignificant whitespace and place the resulting bytes in `MailboxFirstPartyResponsePayloadV1.approval_binding_bytes`.
+type MailboxFirstPartyPrivilegedActionDecisionBindingV1 struct {
+	// ActionType Privileged server-side action that requires mobile approval.
+	ActionType MailboxFirstPartyPrivilegedActionType `json:"action_type"`
+
+	// ApprovingDeviceId Device id whose signing key created `approval_signature`.
+	ApprovingDeviceId openapi_types.UUID `json:"approving_device_id"`
+
+	// ApprovingDeviceSigningKeyJkt Base64url SHA-256 thumbprint of the approving device signing key.
+	ApprovingDeviceSigningKeyJkt string `json:"approving_device_signing_key_jkt"`
+
+	// CanonicalActionHash Hash copied from the request payload.
+	CanonicalActionHash string `json:"canonical_action_hash"`
+
+	// DecidedAt RFC 3339 UTC timestamp of the mobile decision.
+	DecidedAt string `json:"decided_at"`
+
+	// Decision Mobile user's signed decision for a first-party request.
+	Decision MailboxFirstPartyApprovalDecision `json:"decision"`
+
+	// ExpiresAt Request expiry copied from the request payload.
+	ExpiresAt string `json:"expires_at"`
+
+	// IntentId Privileged-action intent id copied from the request payload.
+	IntentId string `json:"intent_id"`
+
+	// Nonce Nonce copied from the request payload.
+	Nonce string `json:"nonce"`
+
+	// RequestEnvelopeId Envelope id of the first-party request being answered.
+	RequestEnvelopeId openapi_types.UUID `json:"request_envelope_id"`
+
+	// RequestEnvelopeIssuedAt Envelope `issued_at` timestamp of the request being answered.
+	RequestEnvelopeIssuedAt string `json:"request_envelope_issued_at"`
+
+	// RequestEnvelopeType Envelope type of the request being answered.
+	RequestEnvelopeType MailboxFirstPartyPrivilegedActionDecisionBindingV1RequestEnvelopeType `json:"request_envelope_type"`
+
+	// RequestId First-party request id copied from the request payload.
+	RequestId string `json:"request_id"`
+
+	// Version Canonical decision binding schema version.
+	Version MailboxFirstPartyPrivilegedActionDecisionBindingV1Version `json:"version"`
+}
+
+// MailboxFirstPartyPrivilegedActionDecisionBindingV1RequestEnvelopeType Envelope type of the request being answered.
+type MailboxFirstPartyPrivilegedActionDecisionBindingV1RequestEnvelopeType string
+
+// MailboxFirstPartyPrivilegedActionDecisionBindingV1Version Canonical decision binding schema version.
+type MailboxFirstPartyPrivilegedActionDecisionBindingV1Version string
+
+// MailboxFirstPartyPrivilegedActionRequestV1 Privileged console action approval request. `canonical_action_bytes` are the UTF-8 JSON bytes of the typed `action` object encoded with lexicographic property order and no insignificant whitespace; the hash pins the exact action details auth will execute after approval.
+type MailboxFirstPartyPrivilegedActionRequestV1 struct {
+	// Action Typed canonical privileged action details shown on mobile.
+	Action MailboxFirstPartyPrivilegedAction `json:"action"`
+
+	// ActionType Privileged server-side action that requires mobile approval.
+	ActionType MailboxFirstPartyPrivilegedActionType `json:"action_type"`
+
+	// CanonicalActionBytes RFC 4648 standard base64 with `=` padding for the canonical privileged action JSON bytes.
+	CanonicalActionBytes []byte `json:"canonical_action_bytes"`
+
+	// CanonicalActionHash SHA-256 hash of `canonical_action_bytes` after base64 decoding.
+	CanonicalActionHash string `json:"canonical_action_hash"`
+
+	// CreatedAt RFC 3339 UTC timestamp when auth created the privileged-action intent.
+	CreatedAt string `json:"created_at"`
+
+	// InitiatingClientId OAuth client id for the console flow that initiated the intent.
+	InitiatingClientId string `json:"initiating_client_id"`
+
+	// InitiatingDpopJkt Base64url SHA-256 thumbprint of the initiating browser DPoP key.
+	InitiatingDpopJkt string `json:"initiating_dpop_jkt"`
+
+	// IntentId Opaque privileged-action intent id.
+	IntentId string `json:"intent_id"`
+}
+
+// MailboxFirstPartyPrivilegedActionType Privileged server-side action that requires mobile approval.
+type MailboxFirstPartyPrivilegedActionType string
+
+// MailboxFirstPartyRelyingPartyRegisterActionV1 Canonical action details for `relying_party.register`. Mobile displays these exact fields before approving creation of the relying party and its paired public/confidential clients.
+type MailboxFirstPartyRelyingPartyRegisterActionV1 struct {
+	// ActionType Discriminator for this privileged action payload.
+	ActionType MailboxFirstPartyRelyingPartyRegisterActionV1ActionType `json:"action_type"`
+
+	// ClientSecretReturnedOnce Whether approval returns a one-time plaintext client secret to the initiating console flow.
+	ClientSecretReturnedOnce bool `json:"client_secret_returned_once"`
+
+	// ConfidentialClientAudience OAuth resource audience requested for confidential client credentials.
+	ConfidentialClientAudience string `json:"confidential_client_audience"`
+
+	// ConfidentialClientScopes Requested scopes for the confidential backend client.
+	ConfidentialClientScopes []string `json:"confidential_client_scopes"`
+
+	// DisplayName Human-readable relying-party label shown to the user.
+	DisplayName string `json:"display_name"`
+
+	// Origin Browser origin that will host the public relying-party client.
+	Origin string `json:"origin"`
+
+	// PublicClientScopes Requested scopes for the public browser Sign in client.
+	PublicClientScopes []string `json:"public_client_scopes"`
+
+	// RedirectUris Exact browser callback URIs for the public authorization-code client.
+	RedirectUris []string `json:"redirect_uris"`
+}
+
+// MailboxFirstPartyRelyingPartyRegisterActionV1ActionType Discriminator for this privileged action payload.
+type MailboxFirstPartyRelyingPartyRegisterActionV1ActionType string
+
+// MailboxFirstPartyRelyingPartyRotateSecretActionV1 Canonical action details for `relying_party.rotate_secret`. Approval authorizes replacing the confidential client's stored secret hash and returning the new secret once to the initiating console flow.
+type MailboxFirstPartyRelyingPartyRotateSecretActionV1 struct {
+	// ActionType Discriminator for this privileged action payload.
+	ActionType MailboxFirstPartyRelyingPartyRotateSecretActionV1ActionType `json:"action_type"`
+
+	// ClientSecretReturnedOnce Whether approval returns a one-time plaintext client secret to the initiating console flow.
+	ClientSecretReturnedOnce bool `json:"client_secret_returned_once"`
+
+	// ConfidentialClientId Confidential backend client id whose secret will rotate.
+	ConfidentialClientId string `json:"confidential_client_id"`
+
+	// DisplayName Human-readable relying-party label shown to the user.
+	DisplayName string `json:"display_name"`
+
+	// Origin Browser origin attached to the relying party.
+	Origin string `json:"origin"`
+
+	// RelyingPartyId Relying-party record id whose confidential secret will rotate.
+	RelyingPartyId string `json:"relying_party_id"`
+}
+
+// MailboxFirstPartyRelyingPartyRotateSecretActionV1ActionType Discriminator for this privileged action payload.
+type MailboxFirstPartyRelyingPartyRotateSecretActionV1ActionType string
+
+// MailboxFirstPartyRequestKind First-party request category delivered to a user's devices.
+type MailboxFirstPartyRequestKind string
+
+// MailboxFirstPartyRequestPayloadV1 Request payload for the `first_party_request` envelope type.
+type MailboxFirstPartyRequestPayloadV1 struct {
+	// ExpiresAt RFC 3339 UTC timestamp after which the request is invalid.
+	ExpiresAt string `json:"expires_at"`
+
+	// IssuedAt RFC 3339 UTC timestamp with canonical `Z` suffix.
+	IssuedAt string `json:"issued_at"`
+
+	// Nonce Opaque nonce bound into the mobile-signed decision.
+	Nonce string `json:"nonce"`
+
+	// PrivilegedAction Privileged console action approval request. `canonical_action_bytes` are the UTF-8 JSON bytes of the typed `action` object encoded with lexicographic property order and no insignificant whitespace; the hash pins the exact action details auth will execute after approval.
+	PrivilegedAction MailboxFirstPartyPrivilegedActionRequestV1 `json:"privileged_action"`
+
+	// RequestId Opaque auth/mailbox-scoped first-party request id.
+	RequestId string `json:"request_id"`
+
+	// RequestKind First-party request category delivered to a user's devices.
+	RequestKind MailboxFirstPartyRequestKind `json:"request_kind"`
+}
+
+// MailboxFirstPartyResponsePayloadV1 Response payload for the `first_party_response` envelope type. The response carries the mobile decision, the exact canonical bytes signed by the approving device, and the raw device signature over those bytes.
+type MailboxFirstPartyResponsePayloadV1 struct {
+	// ApprovalBindingBytes RFC 4648 standard base64 with `=` padding for the canonical `MailboxFirstPartyPrivilegedActionDecisionBindingV1` UTF-8 JSON bytes.
+	ApprovalBindingBytes []byte `json:"approval_binding_bytes"`
+
+	// ApprovalBindingFormat Canonical byte format signed by the approving device key.
+	ApprovalBindingFormat MailboxFirstPartyApprovalBindingFormat `json:"approval_binding_format"`
+
+	// ApprovalSignature RFC 4648 standard base64 with `=` padding for the raw signature over `approval_binding_bytes` after base64 decoding.
+	ApprovalSignature []byte `json:"approval_signature"`
+
+	// ApprovalSignatureAlgorithm Device signing-key algorithm identifier.
+	ApprovalSignatureAlgorithm string `json:"approval_signature_algorithm"`
+
+	// ApprovingDeviceId Device id whose signing key created `approval_signature`.
+	ApprovingDeviceId openapi_types.UUID `json:"approving_device_id"`
+
+	// ApprovingDeviceSigningKeyJkt Base64url SHA-256 thumbprint of the approving device signing key.
+	ApprovingDeviceSigningKeyJkt string `json:"approving_device_signing_key_jkt"`
+
+	// DecidedAt RFC 3339 UTC timestamp of the mobile decision.
+	DecidedAt string `json:"decided_at"`
+
+	// Decision Mobile user's signed decision for a first-party request.
+	Decision MailboxFirstPartyApprovalDecision `json:"decision"`
+
+	// IntentId Privileged-action intent id copied from the request payload.
+	IntentId string `json:"intent_id"`
+
+	// RequestEnvelopeId Envelope id of the first-party request being answered.
+	RequestEnvelopeId openapi_types.UUID `json:"request_envelope_id"`
+
+	// RequestId First-party request id copied from the request payload.
+	RequestId string `json:"request_id"`
+
+	// Status Response lifecycle status. The signed `decision` carries the approval outcome.
+	Status MailboxFirstPartyResponseStatus `json:"status"`
+}
+
+// MailboxFirstPartyResponseStatus Response lifecycle status. The signed `decision` carries the approval outcome.
+type MailboxFirstPartyResponseStatus string
 
 // MailboxGpgDecryptRequestPayloadV1 Request payload for the `gpg_decrypt` envelope type. The approver unwraps the OpenPGP Public Key Encrypted Session Key packet using the encryption subkey selected by `device_key_id`.
 type MailboxGpgDecryptRequestPayloadV1 struct {
@@ -1256,6 +1681,94 @@ func (t MailboxEnrollResponsePayloadV1) MarshalJSON() ([]byte, error) {
 }
 
 func (t *MailboxEnrollResponsePayloadV1) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsMailboxFirstPartyRelyingPartyRegisterActionV1 returns the union data inside the MailboxFirstPartyPrivilegedAction as a MailboxFirstPartyRelyingPartyRegisterActionV1
+func (t MailboxFirstPartyPrivilegedAction) AsMailboxFirstPartyRelyingPartyRegisterActionV1() (MailboxFirstPartyRelyingPartyRegisterActionV1, error) {
+	var body MailboxFirstPartyRelyingPartyRegisterActionV1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMailboxFirstPartyRelyingPartyRegisterActionV1 overwrites any union data inside the MailboxFirstPartyPrivilegedAction as the provided MailboxFirstPartyRelyingPartyRegisterActionV1
+func (t *MailboxFirstPartyPrivilegedAction) FromMailboxFirstPartyRelyingPartyRegisterActionV1(v MailboxFirstPartyRelyingPartyRegisterActionV1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMailboxFirstPartyRelyingPartyRegisterActionV1 performs a merge with any union data inside the MailboxFirstPartyPrivilegedAction, using the provided MailboxFirstPartyRelyingPartyRegisterActionV1
+func (t *MailboxFirstPartyPrivilegedAction) MergeMailboxFirstPartyRelyingPartyRegisterActionV1(v MailboxFirstPartyRelyingPartyRegisterActionV1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMailboxFirstPartyRelyingPartyRotateSecretActionV1 returns the union data inside the MailboxFirstPartyPrivilegedAction as a MailboxFirstPartyRelyingPartyRotateSecretActionV1
+func (t MailboxFirstPartyPrivilegedAction) AsMailboxFirstPartyRelyingPartyRotateSecretActionV1() (MailboxFirstPartyRelyingPartyRotateSecretActionV1, error) {
+	var body MailboxFirstPartyRelyingPartyRotateSecretActionV1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMailboxFirstPartyRelyingPartyRotateSecretActionV1 overwrites any union data inside the MailboxFirstPartyPrivilegedAction as the provided MailboxFirstPartyRelyingPartyRotateSecretActionV1
+func (t *MailboxFirstPartyPrivilegedAction) FromMailboxFirstPartyRelyingPartyRotateSecretActionV1(v MailboxFirstPartyRelyingPartyRotateSecretActionV1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMailboxFirstPartyRelyingPartyRotateSecretActionV1 performs a merge with any union data inside the MailboxFirstPartyPrivilegedAction, using the provided MailboxFirstPartyRelyingPartyRotateSecretActionV1
+func (t *MailboxFirstPartyPrivilegedAction) MergeMailboxFirstPartyRelyingPartyRotateSecretActionV1(v MailboxFirstPartyRelyingPartyRotateSecretActionV1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsMailboxFirstPartyDeviceRevokeOtherActionV1 returns the union data inside the MailboxFirstPartyPrivilegedAction as a MailboxFirstPartyDeviceRevokeOtherActionV1
+func (t MailboxFirstPartyPrivilegedAction) AsMailboxFirstPartyDeviceRevokeOtherActionV1() (MailboxFirstPartyDeviceRevokeOtherActionV1, error) {
+	var body MailboxFirstPartyDeviceRevokeOtherActionV1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMailboxFirstPartyDeviceRevokeOtherActionV1 overwrites any union data inside the MailboxFirstPartyPrivilegedAction as the provided MailboxFirstPartyDeviceRevokeOtherActionV1
+func (t *MailboxFirstPartyPrivilegedAction) FromMailboxFirstPartyDeviceRevokeOtherActionV1(v MailboxFirstPartyDeviceRevokeOtherActionV1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMailboxFirstPartyDeviceRevokeOtherActionV1 performs a merge with any union data inside the MailboxFirstPartyPrivilegedAction, using the provided MailboxFirstPartyDeviceRevokeOtherActionV1
+func (t *MailboxFirstPartyPrivilegedAction) MergeMailboxFirstPartyDeviceRevokeOtherActionV1(v MailboxFirstPartyDeviceRevokeOtherActionV1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t MailboxFirstPartyPrivilegedAction) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *MailboxFirstPartyPrivilegedAction) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

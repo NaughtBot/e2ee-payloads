@@ -13,6 +13,12 @@ import type {
   MailboxEnrollResponseApprovedV1,
   MailboxEnrollResponsePayloadV1,
   MailboxEnvelopeV1,
+  MailboxFirstPartyDeviceRevokeOtherActionV1,
+  MailboxFirstPartyPrivilegedActionDecisionBindingV1,
+  MailboxFirstPartyRequestPayloadV1,
+  MailboxFirstPartyResponsePayloadV1,
+  MailboxFirstPartyRelyingPartyRegisterActionV1,
+  MailboxFirstPartyRelyingPartyRotateSecretActionV1,
   MailboxGpgDecryptResponseSuccessV1,
   MailboxSshAuthResponseSuccessV1,
   MailboxSshSignRequestPayloadV1,
@@ -22,6 +28,12 @@ import type {
 
 const browserApprovalDecisionBindingFixtureJSON =
   '{"approval_id":"appr_browser_approval_fixture","browser_public_key_algorithm":"ES256","browser_public_key_thumbprint":"sha256:8uLz73VtBwmU5O_Jr3r2StpLrNxW41Oq9p6FwR2C7xA","decided_at":"2026-05-14T19:31:00Z","decision":"approved","expires_at":"2026-05-14T19:35:00Z","nonce":"m4H2YxTjueEXAMPLE","pairing_transcript_hash":"sha256:6f5902ac237024bdd0c176cb93063dc4f1e01e1191450b5f8f457c56f48e1f4f","request_envelope_id":"11111111-2222-4333-8444-555555555555","request_envelope_issued_at":"2026-05-14T19:30:00Z","request_envelope_type":"browser_approval_request","requested_capability":"captcha.browser_credential","requester_client_id":"captcha-service","requester_origin":"https://captcha.naughtbot.com","service_mobile_pairing_id":"pair_9d58fb4c6ff84f46","version":"browser-approval-decision-binding/v1"}';
+const firstPartyRegisterActionFixtureJSON =
+  '{"action_type":"relying_party.register","client_secret_returned_once":true,"confidential_client_audience":"verify.api","confidential_client_scopes":["verify:proof"],"display_name":"Customer Portal","origin":"https://customer.example","public_client_scopes":["openid","offline_access","mailbox:pairing:start"],"redirect_uris":["https://customer.example/oauth/callback"]}';
+const firstPartyRegisterActionFixtureHash =
+  "sha256:9d235424c61b5923caae6be03894226a09b80a4cc28d015dc7ac6260424ed1d7";
+const firstPartyDecisionBindingFixtureJSON =
+  '{"action_type":"relying_party.register","approving_device_id":"33333333-4444-4555-8666-777777777777","approving_device_signing_key_jkt":"uJx87scLEhI5vT1YdtXx5ERw2IW0aP2mMNJ1lUu1Dx4","canonical_action_hash":"sha256:9d235424c61b5923caae6be03894226a09b80a4cc28d015dc7ac6260424ed1d7","decided_at":"2026-05-16T20:41:00Z","decision":"approved","expires_at":"2026-05-16T20:45:00Z","intent_id":"pai_first_party_fixture","nonce":"first-party-nonce-fixture","request_envelope_id":"11111111-2222-4333-8444-555555555555","request_envelope_issued_at":"2026-05-16T20:40:00Z","request_envelope_type":"first_party_request","request_id":"fpr_first_party_fixture","version":"first-party-privileged-action-decision-binding/v1"}';
 
 describe("MailboxEnvelopeV1", () => {
   it("round-trips the literal RFC 3339 issued_at string", () => {
@@ -203,6 +215,131 @@ describe("MailboxBrowserApprovalDecisionBindingV1", () => {
       Buffer.from(parsed.approval_proof.proof, "base64").toString("utf8"),
       "browser-approval-proof",
     );
+  });
+});
+
+describe("MailboxFirstPartyPrivilegedActionDecisionBindingV1", () => {
+  it("matches the cross-language canonical action and decision fixtures", () => {
+    const action: MailboxFirstPartyRelyingPartyRegisterActionV1 = {
+      action_type: "relying_party.register",
+      client_secret_returned_once: true,
+      confidential_client_audience: "verify.api",
+      confidential_client_scopes: ["verify:proof"],
+      display_name: "Customer Portal",
+      origin: "https://customer.example",
+      public_client_scopes: [
+        "openid",
+        "offline_access",
+        "mailbox:pairing:start",
+      ],
+      redirect_uris: ["https://customer.example/oauth/callback"],
+    };
+    const actionJSON = JSON.stringify(action);
+    assert.equal(actionJSON, firstPartyRegisterActionFixtureJSON);
+
+    const request: MailboxFirstPartyRequestPayloadV1 = {
+      expires_at: "2026-05-16T20:45:00Z",
+      issued_at: "2026-05-16T20:40:00Z",
+      nonce: "first-party-nonce-fixture",
+      privileged_action: {
+        action,
+        action_type: "relying_party.register",
+        canonical_action_bytes: Buffer.from(actionJSON, "utf8").toString(
+          "base64",
+        ),
+        canonical_action_hash: firstPartyRegisterActionFixtureHash,
+        created_at: "2026-05-16T20:40:00Z",
+        initiating_client_id: "naughtbot-console",
+        initiating_dpop_jkt: "2oNQXcW2Upi5b1xHZQW1Yf3N0aYVnX_Jf7mRiS7Jm8A",
+        intent_id: "pai_first_party_fixture",
+      },
+      request_id: "fpr_first_party_fixture",
+      request_kind: "privileged_action_approval",
+    };
+    const requestParsed = JSON.parse(
+      JSON.stringify(request),
+    ) as MailboxFirstPartyRequestPayloadV1;
+    assert.equal(requestParsed.privileged_action.action_type, action.action_type);
+    assert.equal(
+      Buffer.from(
+        requestParsed.privileged_action.canonical_action_bytes,
+        "base64",
+      ).toString("utf8"),
+      firstPartyRegisterActionFixtureJSON,
+    );
+
+    const binding: MailboxFirstPartyPrivilegedActionDecisionBindingV1 = {
+      action_type: "relying_party.register",
+      approving_device_id: "33333333-4444-4555-8666-777777777777",
+      approving_device_signing_key_jkt:
+        "uJx87scLEhI5vT1YdtXx5ERw2IW0aP2mMNJ1lUu1Dx4",
+      canonical_action_hash: firstPartyRegisterActionFixtureHash,
+      decided_at: "2026-05-16T20:41:00Z",
+      decision: "approved",
+      expires_at: "2026-05-16T20:45:00Z",
+      intent_id: "pai_first_party_fixture",
+      nonce: "first-party-nonce-fixture",
+      request_envelope_id: "11111111-2222-4333-8444-555555555555",
+      request_envelope_issued_at: "2026-05-16T20:40:00Z",
+      request_envelope_type: "first_party_request",
+      request_id: "fpr_first_party_fixture",
+      version: "first-party-privileged-action-decision-binding/v1",
+    };
+    const bindingJSON = JSON.stringify(binding);
+    assert.equal(bindingJSON, firstPartyDecisionBindingFixtureJSON);
+
+    const response: MailboxFirstPartyResponsePayloadV1 = {
+      approval_binding_bytes: Buffer.from(bindingJSON, "utf8").toString(
+        "base64",
+      ),
+      approval_binding_format:
+        "first-party-privileged-action-decision-binding/v1+json",
+      approval_signature: Buffer.from(
+        "first-party-signature",
+        "utf8",
+      ).toString("base64"),
+      approval_signature_algorithm: "ES256",
+      approving_device_id: binding.approving_device_id,
+      approving_device_signing_key_jkt:
+        binding.approving_device_signing_key_jkt,
+      decided_at: binding.decided_at,
+      decision: binding.decision,
+      intent_id: binding.intent_id,
+      request_envelope_id: binding.request_envelope_id,
+      request_id: binding.request_id,
+      status: "decided",
+    };
+    const parsed = JSON.parse(
+      JSON.stringify(response),
+    ) as MailboxFirstPartyResponsePayloadV1;
+    assert.equal(
+      Buffer.from(parsed.approval_binding_bytes, "base64").toString("utf8"),
+      firstPartyDecisionBindingFixtureJSON,
+    );
+    assert.equal(
+      Buffer.from(parsed.approval_signature, "base64").toString("utf8"),
+      "first-party-signature",
+    );
+
+    const rotate: MailboxFirstPartyRelyingPartyRotateSecretActionV1 = {
+      action_type: "relying_party.rotate_secret",
+      client_secret_returned_once: true,
+      confidential_client_id: "rp_conf_9d58fb4c6ff84f46",
+      display_name: "Customer Portal",
+      origin: "https://customer.example",
+      relying_party_id: "rp_2af7b1fb2b5b4b5b8",
+    };
+    const revoke: MailboxFirstPartyDeviceRevokeOtherActionV1 = {
+      action_type: "device.revoke_other",
+      revoke_pairings: true,
+      revoke_refresh_tokens: true,
+      target_device_created_at: "2026-05-01T12:00:00Z",
+      target_device_id: "22222222-3333-4444-8555-666666666666",
+      target_device_name: "Taylor's iPhone",
+      target_device_type: "ios",
+    };
+    assert.equal(rotate.action_type, "relying_party.rotate_secret");
+    assert.equal(revoke.action_type, "device.revoke_other");
   });
 });
 
