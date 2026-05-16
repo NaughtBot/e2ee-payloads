@@ -15,6 +15,9 @@ private let encoder: JSONEncoder = {
 }()
 
 private let browserApprovalDecisionBindingFixtureJSON = #"{"approval_id":"appr_browser_approval_fixture","browser_public_key_algorithm":"ES256","browser_public_key_thumbprint":"sha256:8uLz73VtBwmU5O_Jr3r2StpLrNxW41Oq9p6FwR2C7xA","decided_at":"2026-05-14T19:31:00Z","decision":"approved","expires_at":"2026-05-14T19:35:00Z","nonce":"m4H2YxTjueEXAMPLE","pairing_transcript_hash":"sha256:6f5902ac237024bdd0c176cb93063dc4f1e01e1191450b5f8f457c56f48e1f4f","request_envelope_id":"11111111-2222-4333-8444-555555555555","request_envelope_issued_at":"2026-05-14T19:30:00Z","request_envelope_type":"browser_approval_request","requested_capability":"captcha.browser_credential","requester_client_id":"captcha-service","requester_origin":"https://captcha.naughtbot.com","service_mobile_pairing_id":"pair_9d58fb4c6ff84f46","version":"browser-approval-decision-binding/v1"}"#
+private let firstPartyRegisterActionFixtureJSON = #"{"action_type":"relying_party.register","client_secret_returned_once":true,"confidential_client_audience":"verify.api","confidential_client_scopes":["verify:proof"],"display_name":"Customer Portal","origin":"https://customer.example","public_client_scopes":["openid","offline_access","mailbox:pairing:start"],"redirect_uris":["https://customer.example/oauth/callback"]}"#
+private let firstPartyRegisterActionFixtureHash = "sha256:9d235424c61b5923caae6be03894226a09b80a4cc28d015dc7ac6260424ed1d7"
+private let firstPartyDecisionBindingFixtureJSON = #"{"action_type":"relying_party.register","approving_device_id":"33333333-4444-4555-8666-777777777777","approving_device_signing_key_jkt":"uJx87scLEhI5vT1YdtXx5ERw2IW0aP2mMNJ1lUu1Dx4","canonical_action_hash":"sha256:9d235424c61b5923caae6be03894226a09b80a4cc28d015dc7ac6260424ed1d7","decided_at":"2026-05-16T20:41:00Z","decision":"approved","expires_at":"2026-05-16T20:45:00Z","intent_id":"pai_first_party_fixture","nonce":"first-party-nonce-fixture","request_envelope_id":"11111111-2222-4333-8444-555555555555","request_envelope_issued_at":"2026-05-16T20:40:00Z","request_envelope_type":"first_party_request","request_id":"fpr_first_party_fixture","version":"first-party-privileged-action-decision-binding/v1"}"#
 
 @Test
 func envelopeRoundTrip() throws {
@@ -194,6 +197,96 @@ func browserApprovalDecisionBindingFixture() throws {
     )
     #expect(Data(decoded.approval_binding_bytes.data) == encoded)
     #expect(Data(decoded.approval_proof.proof.data) == Data("browser-approval-proof".utf8))
+    #expect(decoded.decision == .approved)
+    #expect(decoded.status == .decided)
+}
+
+@Test
+func firstPartyPrivilegedActionBindingFixture() throws {
+    let action = Components.Schemas.MailboxFirstPartyRelyingPartyRegisterActionV1(
+        action_type: .relying_party_period_register,
+        client_secret_returned_once: true,
+        confidential_client_audience: "verify.api",
+        confidential_client_scopes: ["verify:proof"],
+        display_name: "Customer Portal",
+        origin: "https://customer.example",
+        public_client_scopes: [
+            "openid",
+            "offline_access",
+            "mailbox:pairing:start",
+        ],
+        redirect_uris: ["https://customer.example/oauth/callback"]
+    )
+    let actionEncoded = try encoder.encode(action)
+    let actionString = String(decoding: actionEncoded, as: UTF8.self)
+    #expect(actionString == firstPartyRegisterActionFixtureJSON)
+
+    let request = Components.Schemas.MailboxFirstPartyRequestPayloadV1(
+        expires_at: "2026-05-16T20:45:00Z",
+        issued_at: "2026-05-16T20:40:00Z",
+        nonce: "first-party-nonce-fixture",
+        privileged_action: .init(
+            action: .MailboxFirstPartyRelyingPartyRegisterActionV1(action),
+            action_type: .relying_party_period_register,
+            canonical_action_bytes: .init(actionEncoded),
+            canonical_action_hash: firstPartyRegisterActionFixtureHash,
+            created_at: "2026-05-16T20:40:00Z",
+            initiating_client_id: "naughtbot-console",
+            initiating_dpop_jkt: "2oNQXcW2Upi5b1xHZQW1Yf3N0aYVnX_Jf7mRiS7Jm8A",
+            intent_id: "pai_first_party_fixture"
+        ),
+        request_id: "fpr_first_party_fixture",
+        request_kind: .privileged_action_approval
+    )
+    let requestEncoded = try encoder.encode(request)
+    let requestDecoded = try decoder.decode(
+        Components.Schemas.MailboxFirstPartyRequestPayloadV1.self,
+        from: requestEncoded
+    )
+    #expect(requestDecoded.privileged_action.action_type == .relying_party_period_register)
+    #expect(Data(requestDecoded.privileged_action.canonical_action_bytes.data) == actionEncoded)
+
+    let binding = Components.Schemas.MailboxFirstPartyPrivilegedActionDecisionBindingV1(
+        action_type: .relying_party_period_register,
+        approving_device_id: "33333333-4444-4555-8666-777777777777",
+        approving_device_signing_key_jkt: "uJx87scLEhI5vT1YdtXx5ERw2IW0aP2mMNJ1lUu1Dx4",
+        canonical_action_hash: firstPartyRegisterActionFixtureHash,
+        decided_at: "2026-05-16T20:41:00Z",
+        decision: .approved,
+        expires_at: "2026-05-16T20:45:00Z",
+        intent_id: "pai_first_party_fixture",
+        nonce: "first-party-nonce-fixture",
+        request_envelope_id: "11111111-2222-4333-8444-555555555555",
+        request_envelope_issued_at: "2026-05-16T20:40:00Z",
+        request_envelope_type: .first_party_request,
+        request_id: "fpr_first_party_fixture",
+        version: .first_hyphen_party_hyphen_privileged_hyphen_action_hyphen_decision_hyphen_binding_sol_v1
+    )
+    let bindingEncoded = try encoder.encode(binding)
+    let bindingString = String(decoding: bindingEncoded, as: UTF8.self)
+    #expect(bindingString == firstPartyDecisionBindingFixtureJSON)
+
+    let response = Components.Schemas.MailboxFirstPartyResponsePayloadV1(
+        approval_binding_bytes: .init(bindingEncoded),
+        approval_binding_format: .first_hyphen_party_hyphen_privileged_hyphen_action_hyphen_decision_hyphen_binding_sol_v1_plus_json,
+        approval_signature: .init(Data("first-party-signature".utf8)),
+        approval_signature_algorithm: "ES256",
+        approving_device_id: binding.approving_device_id,
+        approving_device_signing_key_jkt: binding.approving_device_signing_key_jkt,
+        decided_at: binding.decided_at,
+        decision: binding.decision,
+        intent_id: binding.intent_id,
+        request_envelope_id: binding.request_envelope_id,
+        request_id: binding.request_id,
+        status: .decided
+    )
+    let responseEncoded = try encoder.encode(response)
+    let decoded = try decoder.decode(
+        Components.Schemas.MailboxFirstPartyResponsePayloadV1.self,
+        from: responseEncoded
+    )
+    #expect(Data(decoded.approval_binding_bytes.data) == bindingEncoded)
+    #expect(Data(decoded.approval_signature.data) == Data("first-party-signature".utf8))
     #expect(decoded.decision == .approved)
     #expect(decoded.status == .decided)
 }

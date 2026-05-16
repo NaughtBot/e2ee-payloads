@@ -151,6 +151,8 @@ public enum Components {
             case enroll = "enroll"
             case browser_approval_request = "browser_approval_request"
             case browser_approval_response = "browser_approval_response"
+            case first_party_request = "first_party_request"
+            case first_party_response = "first_party_response"
         }
         /// Canonical Longfellow / attested-key-zk approval challenge. Producer sends this inside the request payload; the approver binds it into the approval proof returned in the response payload.
         ///
@@ -3619,6 +3621,1024 @@ public enum Components {
                     "decided_at",
                     "decision",
                     "request_envelope_id",
+                    "status"
+                ])
+            }
+        }
+        /// First-party request category delivered to a user's devices.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRequestKind`.
+        @frozen public enum MailboxFirstPartyRequestKind: String, Codable, Hashable, Sendable, CaseIterable {
+            case privileged_action_approval = "privileged_action_approval"
+        }
+        /// Privileged server-side action that requires mobile approval.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionType`.
+        @frozen public enum MailboxFirstPartyPrivilegedActionType: String, Codable, Hashable, Sendable, CaseIterable {
+            case relying_party_period_register = "relying_party.register"
+            case relying_party_period_rotate_secret = "relying_party.rotate_secret"
+            case device_period_revoke_other = "device.revoke_other"
+        }
+        /// Mobile user's signed decision for a first-party request.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyApprovalDecision`.
+        @frozen public enum MailboxFirstPartyApprovalDecision: String, Codable, Hashable, Sendable, CaseIterable {
+            case approved = "approved"
+            case denied = "denied"
+        }
+        /// Response lifecycle status. The signed `decision` carries the approval outcome.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyResponseStatus`.
+        @frozen public enum MailboxFirstPartyResponseStatus: String, Codable, Hashable, Sendable, CaseIterable {
+            case decided = "decided"
+        }
+        /// Canonical byte format signed by the approving device key.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyApprovalBindingFormat`.
+        @frozen public enum MailboxFirstPartyApprovalBindingFormat: String, Codable, Hashable, Sendable, CaseIterable {
+            case first_hyphen_party_hyphen_privileged_hyphen_action_hyphen_decision_hyphen_binding_sol_v1_plus_json = "first-party-privileged-action-decision-binding/v1+json"
+        }
+        /// Canonical action details for `relying_party.register`. Mobile displays these exact fields before approving creation of the relying party and its paired public/confidential clients.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRegisterActionV1`.
+        public struct MailboxFirstPartyRelyingPartyRegisterActionV1: Codable, Hashable, Sendable {
+            /// Discriminator for this privileged action payload.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRegisterActionV1/action_type`.
+            @frozen public enum action_typePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case relying_party_period_register = "relying_party.register"
+            }
+            /// Discriminator for this privileged action payload.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRegisterActionV1/action_type`.
+            public var action_type: Components.Schemas.MailboxFirstPartyRelyingPartyRegisterActionV1.action_typePayload
+            /// Whether approval returns a one-time plaintext client secret to the initiating console flow.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRegisterActionV1/client_secret_returned_once`.
+            public var client_secret_returned_once: Swift.Bool
+            /// OAuth resource audience requested for confidential client credentials.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRegisterActionV1/confidential_client_audience`.
+            public var confidential_client_audience: Swift.String
+            /// Requested scopes for the confidential backend client.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRegisterActionV1/confidential_client_scopes`.
+            public var confidential_client_scopes: [Swift.String]
+            /// Human-readable relying-party label shown to the user.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRegisterActionV1/display_name`.
+            public var display_name: Swift.String
+            /// Browser origin that will host the public relying-party client.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRegisterActionV1/origin`.
+            public var origin: Swift.String
+            /// Requested scopes for the public browser Sign in client.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRegisterActionV1/public_client_scopes`.
+            public var public_client_scopes: [Swift.String]
+            /// Exact browser callback URIs for the public authorization-code client.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRegisterActionV1/redirect_uris`.
+            public var redirect_uris: [Swift.String]
+            /// Creates a new `MailboxFirstPartyRelyingPartyRegisterActionV1`.
+            ///
+            /// - Parameters:
+            ///   - action_type: Discriminator for this privileged action payload.
+            ///   - client_secret_returned_once: Whether approval returns a one-time plaintext client secret to the initiating console flow.
+            ///   - confidential_client_audience: OAuth resource audience requested for confidential client credentials.
+            ///   - confidential_client_scopes: Requested scopes for the confidential backend client.
+            ///   - display_name: Human-readable relying-party label shown to the user.
+            ///   - origin: Browser origin that will host the public relying-party client.
+            ///   - public_client_scopes: Requested scopes for the public browser Sign in client.
+            ///   - redirect_uris: Exact browser callback URIs for the public authorization-code client.
+            public init(
+                action_type: Components.Schemas.MailboxFirstPartyRelyingPartyRegisterActionV1.action_typePayload,
+                client_secret_returned_once: Swift.Bool,
+                confidential_client_audience: Swift.String,
+                confidential_client_scopes: [Swift.String],
+                display_name: Swift.String,
+                origin: Swift.String,
+                public_client_scopes: [Swift.String],
+                redirect_uris: [Swift.String]
+            ) {
+                self.action_type = action_type
+                self.client_secret_returned_once = client_secret_returned_once
+                self.confidential_client_audience = confidential_client_audience
+                self.confidential_client_scopes = confidential_client_scopes
+                self.display_name = display_name
+                self.origin = origin
+                self.public_client_scopes = public_client_scopes
+                self.redirect_uris = redirect_uris
+            }
+            public enum CodingKeys: String, CodingKey {
+                case action_type
+                case client_secret_returned_once
+                case confidential_client_audience
+                case confidential_client_scopes
+                case display_name
+                case origin
+                case public_client_scopes
+                case redirect_uris
+            }
+            public init(from decoder: any Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.action_type = try container.decode(
+                    Components.Schemas.MailboxFirstPartyRelyingPartyRegisterActionV1.action_typePayload.self,
+                    forKey: .action_type
+                )
+                self.client_secret_returned_once = try container.decode(
+                    Swift.Bool.self,
+                    forKey: .client_secret_returned_once
+                )
+                self.confidential_client_audience = try container.decode(
+                    Swift.String.self,
+                    forKey: .confidential_client_audience
+                )
+                self.confidential_client_scopes = try container.decode(
+                    [Swift.String].self,
+                    forKey: .confidential_client_scopes
+                )
+                self.display_name = try container.decode(
+                    Swift.String.self,
+                    forKey: .display_name
+                )
+                self.origin = try container.decode(
+                    Swift.String.self,
+                    forKey: .origin
+                )
+                self.public_client_scopes = try container.decode(
+                    [Swift.String].self,
+                    forKey: .public_client_scopes
+                )
+                self.redirect_uris = try container.decode(
+                    [Swift.String].self,
+                    forKey: .redirect_uris
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "action_type",
+                    "client_secret_returned_once",
+                    "confidential_client_audience",
+                    "confidential_client_scopes",
+                    "display_name",
+                    "origin",
+                    "public_client_scopes",
+                    "redirect_uris"
+                ])
+            }
+        }
+        /// Canonical action details for `relying_party.rotate_secret`. Approval authorizes replacing the confidential client's stored secret hash and returning the new secret once to the initiating console flow.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRotateSecretActionV1`.
+        public struct MailboxFirstPartyRelyingPartyRotateSecretActionV1: Codable, Hashable, Sendable {
+            /// Discriminator for this privileged action payload.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRotateSecretActionV1/action_type`.
+            @frozen public enum action_typePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case relying_party_period_rotate_secret = "relying_party.rotate_secret"
+            }
+            /// Discriminator for this privileged action payload.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRotateSecretActionV1/action_type`.
+            public var action_type: Components.Schemas.MailboxFirstPartyRelyingPartyRotateSecretActionV1.action_typePayload
+            /// Whether approval returns a one-time plaintext client secret to the initiating console flow.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRotateSecretActionV1/client_secret_returned_once`.
+            public var client_secret_returned_once: Swift.Bool
+            /// Confidential backend client id whose secret will rotate.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRotateSecretActionV1/confidential_client_id`.
+            public var confidential_client_id: Swift.String
+            /// Human-readable relying-party label shown to the user.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRotateSecretActionV1/display_name`.
+            public var display_name: Swift.String
+            /// Browser origin attached to the relying party.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRotateSecretActionV1/origin`.
+            public var origin: Swift.String
+            /// Relying-party record id whose confidential secret will rotate.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRelyingPartyRotateSecretActionV1/relying_party_id`.
+            public var relying_party_id: Swift.String
+            /// Creates a new `MailboxFirstPartyRelyingPartyRotateSecretActionV1`.
+            ///
+            /// - Parameters:
+            ///   - action_type: Discriminator for this privileged action payload.
+            ///   - client_secret_returned_once: Whether approval returns a one-time plaintext client secret to the initiating console flow.
+            ///   - confidential_client_id: Confidential backend client id whose secret will rotate.
+            ///   - display_name: Human-readable relying-party label shown to the user.
+            ///   - origin: Browser origin attached to the relying party.
+            ///   - relying_party_id: Relying-party record id whose confidential secret will rotate.
+            public init(
+                action_type: Components.Schemas.MailboxFirstPartyRelyingPartyRotateSecretActionV1.action_typePayload,
+                client_secret_returned_once: Swift.Bool,
+                confidential_client_id: Swift.String,
+                display_name: Swift.String,
+                origin: Swift.String,
+                relying_party_id: Swift.String
+            ) {
+                self.action_type = action_type
+                self.client_secret_returned_once = client_secret_returned_once
+                self.confidential_client_id = confidential_client_id
+                self.display_name = display_name
+                self.origin = origin
+                self.relying_party_id = relying_party_id
+            }
+            public enum CodingKeys: String, CodingKey {
+                case action_type
+                case client_secret_returned_once
+                case confidential_client_id
+                case display_name
+                case origin
+                case relying_party_id
+            }
+            public init(from decoder: any Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.action_type = try container.decode(
+                    Components.Schemas.MailboxFirstPartyRelyingPartyRotateSecretActionV1.action_typePayload.self,
+                    forKey: .action_type
+                )
+                self.client_secret_returned_once = try container.decode(
+                    Swift.Bool.self,
+                    forKey: .client_secret_returned_once
+                )
+                self.confidential_client_id = try container.decode(
+                    Swift.String.self,
+                    forKey: .confidential_client_id
+                )
+                self.display_name = try container.decode(
+                    Swift.String.self,
+                    forKey: .display_name
+                )
+                self.origin = try container.decode(
+                    Swift.String.self,
+                    forKey: .origin
+                )
+                self.relying_party_id = try container.decode(
+                    Swift.String.self,
+                    forKey: .relying_party_id
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "action_type",
+                    "client_secret_returned_once",
+                    "confidential_client_id",
+                    "display_name",
+                    "origin",
+                    "relying_party_id"
+                ])
+            }
+        }
+        /// Canonical action details for `device.revoke_other`. Approval authorizes revoking another active device on the same user account.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyDeviceRevokeOtherActionV1`.
+        public struct MailboxFirstPartyDeviceRevokeOtherActionV1: Codable, Hashable, Sendable {
+            /// Discriminator for this privileged action payload.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyDeviceRevokeOtherActionV1/action_type`.
+            @frozen public enum action_typePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case device_period_revoke_other = "device.revoke_other"
+            }
+            /// Discriminator for this privileged action payload.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyDeviceRevokeOtherActionV1/action_type`.
+            public var action_type: Components.Schemas.MailboxFirstPartyDeviceRevokeOtherActionV1.action_typePayload
+            /// Whether approval cascades revocation to pairings involving the target device.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyDeviceRevokeOtherActionV1/revoke_pairings`.
+            public var revoke_pairings: Swift.Bool
+            /// Whether approval revokes refresh-token families bound to the target device.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyDeviceRevokeOtherActionV1/revoke_refresh_tokens`.
+            public var revoke_refresh_tokens: Swift.Bool
+            /// RFC 3339 UTC creation timestamp for the target device.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyDeviceRevokeOtherActionV1/target_device_created_at`.
+            public var target_device_created_at: Swift.String
+            /// Device id that will be revoked.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyDeviceRevokeOtherActionV1/target_device_id`.
+            public var target_device_id: Swift.String
+            /// Optional human-readable device name shown to the user.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyDeviceRevokeOtherActionV1/target_device_name`.
+            public var target_device_name: Swift.String?
+            /// Registered platform type for the target device.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyDeviceRevokeOtherActionV1/target_device_type`.
+            @frozen public enum target_device_typePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case ios = "ios"
+                case android = "android"
+            }
+            /// Registered platform type for the target device.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyDeviceRevokeOtherActionV1/target_device_type`.
+            public var target_device_type: Components.Schemas.MailboxFirstPartyDeviceRevokeOtherActionV1.target_device_typePayload
+            /// Creates a new `MailboxFirstPartyDeviceRevokeOtherActionV1`.
+            ///
+            /// - Parameters:
+            ///   - action_type: Discriminator for this privileged action payload.
+            ///   - revoke_pairings: Whether approval cascades revocation to pairings involving the target device.
+            ///   - revoke_refresh_tokens: Whether approval revokes refresh-token families bound to the target device.
+            ///   - target_device_created_at: RFC 3339 UTC creation timestamp for the target device.
+            ///   - target_device_id: Device id that will be revoked.
+            ///   - target_device_name: Optional human-readable device name shown to the user.
+            ///   - target_device_type: Registered platform type for the target device.
+            public init(
+                action_type: Components.Schemas.MailboxFirstPartyDeviceRevokeOtherActionV1.action_typePayload,
+                revoke_pairings: Swift.Bool,
+                revoke_refresh_tokens: Swift.Bool,
+                target_device_created_at: Swift.String,
+                target_device_id: Swift.String,
+                target_device_name: Swift.String? = nil,
+                target_device_type: Components.Schemas.MailboxFirstPartyDeviceRevokeOtherActionV1.target_device_typePayload
+            ) {
+                self.action_type = action_type
+                self.revoke_pairings = revoke_pairings
+                self.revoke_refresh_tokens = revoke_refresh_tokens
+                self.target_device_created_at = target_device_created_at
+                self.target_device_id = target_device_id
+                self.target_device_name = target_device_name
+                self.target_device_type = target_device_type
+            }
+            public enum CodingKeys: String, CodingKey {
+                case action_type
+                case revoke_pairings
+                case revoke_refresh_tokens
+                case target_device_created_at
+                case target_device_id
+                case target_device_name
+                case target_device_type
+            }
+            public init(from decoder: any Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.action_type = try container.decode(
+                    Components.Schemas.MailboxFirstPartyDeviceRevokeOtherActionV1.action_typePayload.self,
+                    forKey: .action_type
+                )
+                self.revoke_pairings = try container.decode(
+                    Swift.Bool.self,
+                    forKey: .revoke_pairings
+                )
+                self.revoke_refresh_tokens = try container.decode(
+                    Swift.Bool.self,
+                    forKey: .revoke_refresh_tokens
+                )
+                self.target_device_created_at = try container.decode(
+                    Swift.String.self,
+                    forKey: .target_device_created_at
+                )
+                self.target_device_id = try container.decode(
+                    Swift.String.self,
+                    forKey: .target_device_id
+                )
+                self.target_device_name = try container.decodeIfPresent(
+                    Swift.String.self,
+                    forKey: .target_device_name
+                )
+                self.target_device_type = try container.decode(
+                    Components.Schemas.MailboxFirstPartyDeviceRevokeOtherActionV1.target_device_typePayload.self,
+                    forKey: .target_device_type
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "action_type",
+                    "revoke_pairings",
+                    "revoke_refresh_tokens",
+                    "target_device_created_at",
+                    "target_device_id",
+                    "target_device_name",
+                    "target_device_type"
+                ])
+            }
+        }
+        /// Typed canonical privileged action details shown on mobile.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedAction`.
+        @frozen public enum MailboxFirstPartyPrivilegedAction: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedAction/case1`.
+            case MailboxFirstPartyRelyingPartyRegisterActionV1(Components.Schemas.MailboxFirstPartyRelyingPartyRegisterActionV1)
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedAction/case2`.
+            case MailboxFirstPartyRelyingPartyRotateSecretActionV1(Components.Schemas.MailboxFirstPartyRelyingPartyRotateSecretActionV1)
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedAction/case3`.
+            case MailboxFirstPartyDeviceRevokeOtherActionV1(Components.Schemas.MailboxFirstPartyDeviceRevokeOtherActionV1)
+            public init(from decoder: any Decoder) throws {
+                var errors: [any Error] = []
+                do {
+                    self = .MailboxFirstPartyRelyingPartyRegisterActionV1(try .init(from: decoder))
+                    return
+                } catch {
+                    errors.append(error)
+                }
+                do {
+                    self = .MailboxFirstPartyRelyingPartyRotateSecretActionV1(try .init(from: decoder))
+                    return
+                } catch {
+                    errors.append(error)
+                }
+                do {
+                    self = .MailboxFirstPartyDeviceRevokeOtherActionV1(try .init(from: decoder))
+                    return
+                } catch {
+                    errors.append(error)
+                }
+                throw Swift.DecodingError.failedToDecodeOneOfSchema(
+                    type: Self.self,
+                    codingPath: decoder.codingPath,
+                    errors: errors
+                )
+            }
+            public func encode(to encoder: any Encoder) throws {
+                switch self {
+                case let .MailboxFirstPartyRelyingPartyRegisterActionV1(value):
+                    try value.encode(to: encoder)
+                case let .MailboxFirstPartyRelyingPartyRotateSecretActionV1(value):
+                    try value.encode(to: encoder)
+                case let .MailboxFirstPartyDeviceRevokeOtherActionV1(value):
+                    try value.encode(to: encoder)
+                }
+            }
+        }
+        /// Privileged console action approval request. `canonical_action_bytes` are the UTF-8 JSON bytes of the typed `action` object encoded with lexicographic property order and no insignificant whitespace; the hash pins the exact action details auth will execute after approval.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionRequestV1`.
+        public struct MailboxFirstPartyPrivilegedActionRequestV1: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionRequestV1/action`.
+            public var action: Components.Schemas.MailboxFirstPartyPrivilegedAction
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionRequestV1/action_type`.
+            public var action_type: Components.Schemas.MailboxFirstPartyPrivilegedActionType
+            /// RFC 4648 standard base64 with `=` padding for the canonical privileged action JSON bytes.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionRequestV1/canonical_action_bytes`.
+            public var canonical_action_bytes: OpenAPIRuntime.Base64EncodedData
+            /// SHA-256 hash of `canonical_action_bytes` after base64 decoding.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionRequestV1/canonical_action_hash`.
+            public var canonical_action_hash: Swift.String
+            /// RFC 3339 UTC timestamp when auth created the privileged-action intent.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionRequestV1/created_at`.
+            public var created_at: Swift.String
+            /// OAuth client id for the console flow that initiated the intent.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionRequestV1/initiating_client_id`.
+            public var initiating_client_id: Swift.String
+            /// Base64url SHA-256 thumbprint of the initiating browser DPoP key.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionRequestV1/initiating_dpop_jkt`.
+            public var initiating_dpop_jkt: Swift.String
+            /// Opaque privileged-action intent id.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionRequestV1/intent_id`.
+            public var intent_id: Swift.String
+            /// Creates a new `MailboxFirstPartyPrivilegedActionRequestV1`.
+            ///
+            /// - Parameters:
+            ///   - action:
+            ///   - action_type:
+            ///   - canonical_action_bytes: RFC 4648 standard base64 with `=` padding for the canonical privileged action JSON bytes.
+            ///   - canonical_action_hash: SHA-256 hash of `canonical_action_bytes` after base64 decoding.
+            ///   - created_at: RFC 3339 UTC timestamp when auth created the privileged-action intent.
+            ///   - initiating_client_id: OAuth client id for the console flow that initiated the intent.
+            ///   - initiating_dpop_jkt: Base64url SHA-256 thumbprint of the initiating browser DPoP key.
+            ///   - intent_id: Opaque privileged-action intent id.
+            public init(
+                action: Components.Schemas.MailboxFirstPartyPrivilegedAction,
+                action_type: Components.Schemas.MailboxFirstPartyPrivilegedActionType,
+                canonical_action_bytes: OpenAPIRuntime.Base64EncodedData,
+                canonical_action_hash: Swift.String,
+                created_at: Swift.String,
+                initiating_client_id: Swift.String,
+                initiating_dpop_jkt: Swift.String,
+                intent_id: Swift.String
+            ) {
+                self.action = action
+                self.action_type = action_type
+                self.canonical_action_bytes = canonical_action_bytes
+                self.canonical_action_hash = canonical_action_hash
+                self.created_at = created_at
+                self.initiating_client_id = initiating_client_id
+                self.initiating_dpop_jkt = initiating_dpop_jkt
+                self.intent_id = intent_id
+            }
+            public enum CodingKeys: String, CodingKey {
+                case action
+                case action_type
+                case canonical_action_bytes
+                case canonical_action_hash
+                case created_at
+                case initiating_client_id
+                case initiating_dpop_jkt
+                case intent_id
+            }
+            public init(from decoder: any Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.action = try container.decode(
+                    Components.Schemas.MailboxFirstPartyPrivilegedAction.self,
+                    forKey: .action
+                )
+                self.action_type = try container.decode(
+                    Components.Schemas.MailboxFirstPartyPrivilegedActionType.self,
+                    forKey: .action_type
+                )
+                self.canonical_action_bytes = try container.decode(
+                    OpenAPIRuntime.Base64EncodedData.self,
+                    forKey: .canonical_action_bytes
+                )
+                self.canonical_action_hash = try container.decode(
+                    Swift.String.self,
+                    forKey: .canonical_action_hash
+                )
+                self.created_at = try container.decode(
+                    Swift.String.self,
+                    forKey: .created_at
+                )
+                self.initiating_client_id = try container.decode(
+                    Swift.String.self,
+                    forKey: .initiating_client_id
+                )
+                self.initiating_dpop_jkt = try container.decode(
+                    Swift.String.self,
+                    forKey: .initiating_dpop_jkt
+                )
+                self.intent_id = try container.decode(
+                    Swift.String.self,
+                    forKey: .intent_id
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "action",
+                    "action_type",
+                    "canonical_action_bytes",
+                    "canonical_action_hash",
+                    "created_at",
+                    "initiating_client_id",
+                    "initiating_dpop_jkt",
+                    "intent_id"
+                ])
+            }
+        }
+        /// Request payload for the `first_party_request` envelope type.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRequestPayloadV1`.
+        public struct MailboxFirstPartyRequestPayloadV1: Codable, Hashable, Sendable {
+            /// RFC 3339 UTC timestamp after which the request is invalid.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRequestPayloadV1/expires_at`.
+            public var expires_at: Swift.String
+            /// RFC 3339 UTC timestamp with canonical `Z` suffix.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRequestPayloadV1/issued_at`.
+            public var issued_at: Swift.String
+            /// Opaque nonce bound into the mobile-signed decision.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRequestPayloadV1/nonce`.
+            public var nonce: Swift.String
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRequestPayloadV1/privileged_action`.
+            public var privileged_action: Components.Schemas.MailboxFirstPartyPrivilegedActionRequestV1
+            /// Opaque auth/mailbox-scoped first-party request id.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRequestPayloadV1/request_id`.
+            public var request_id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyRequestPayloadV1/request_kind`.
+            public var request_kind: Components.Schemas.MailboxFirstPartyRequestKind
+            /// Creates a new `MailboxFirstPartyRequestPayloadV1`.
+            ///
+            /// - Parameters:
+            ///   - expires_at: RFC 3339 UTC timestamp after which the request is invalid.
+            ///   - issued_at: RFC 3339 UTC timestamp with canonical `Z` suffix.
+            ///   - nonce: Opaque nonce bound into the mobile-signed decision.
+            ///   - privileged_action:
+            ///   - request_id: Opaque auth/mailbox-scoped first-party request id.
+            ///   - request_kind:
+            public init(
+                expires_at: Swift.String,
+                issued_at: Swift.String,
+                nonce: Swift.String,
+                privileged_action: Components.Schemas.MailboxFirstPartyPrivilegedActionRequestV1,
+                request_id: Swift.String,
+                request_kind: Components.Schemas.MailboxFirstPartyRequestKind
+            ) {
+                self.expires_at = expires_at
+                self.issued_at = issued_at
+                self.nonce = nonce
+                self.privileged_action = privileged_action
+                self.request_id = request_id
+                self.request_kind = request_kind
+            }
+            public enum CodingKeys: String, CodingKey {
+                case expires_at
+                case issued_at
+                case nonce
+                case privileged_action
+                case request_id
+                case request_kind
+            }
+            public init(from decoder: any Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.expires_at = try container.decode(
+                    Swift.String.self,
+                    forKey: .expires_at
+                )
+                self.issued_at = try container.decode(
+                    Swift.String.self,
+                    forKey: .issued_at
+                )
+                self.nonce = try container.decode(
+                    Swift.String.self,
+                    forKey: .nonce
+                )
+                self.privileged_action = try container.decode(
+                    Components.Schemas.MailboxFirstPartyPrivilegedActionRequestV1.self,
+                    forKey: .privileged_action
+                )
+                self.request_id = try container.decode(
+                    Swift.String.self,
+                    forKey: .request_id
+                )
+                self.request_kind = try container.decode(
+                    Components.Schemas.MailboxFirstPartyRequestKind.self,
+                    forKey: .request_kind
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "expires_at",
+                    "issued_at",
+                    "nonce",
+                    "privileged_action",
+                    "request_id",
+                    "request_kind"
+                ])
+            }
+        }
+        /// Canonical JSON object whose UTF-8 bytes are signed by the approving device key. Producers encode these fields in lexicographic property order with no insignificant whitespace and place the resulting bytes in `MailboxFirstPartyResponsePayloadV1.approval_binding_bytes`.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1`.
+        public struct MailboxFirstPartyPrivilegedActionDecisionBindingV1: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1/action_type`.
+            public var action_type: Components.Schemas.MailboxFirstPartyPrivilegedActionType
+            /// Device id whose signing key created `approval_signature`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1/approving_device_id`.
+            public var approving_device_id: Swift.String
+            /// Base64url SHA-256 thumbprint of the approving device signing key.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1/approving_device_signing_key_jkt`.
+            public var approving_device_signing_key_jkt: Swift.String
+            /// Hash copied from the request payload.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1/canonical_action_hash`.
+            public var canonical_action_hash: Swift.String
+            /// RFC 3339 UTC timestamp of the mobile decision.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1/decided_at`.
+            public var decided_at: Swift.String
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1/decision`.
+            public var decision: Components.Schemas.MailboxFirstPartyApprovalDecision
+            /// Request expiry copied from the request payload.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1/expires_at`.
+            public var expires_at: Swift.String
+            /// Privileged-action intent id copied from the request payload.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1/intent_id`.
+            public var intent_id: Swift.String
+            /// Nonce copied from the request payload.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1/nonce`.
+            public var nonce: Swift.String
+            /// Envelope id of the first-party request being answered.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1/request_envelope_id`.
+            public var request_envelope_id: Swift.String
+            /// Envelope `issued_at` timestamp of the request being answered.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1/request_envelope_issued_at`.
+            public var request_envelope_issued_at: Swift.String
+            /// Envelope type of the request being answered.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1/request_envelope_type`.
+            @frozen public enum request_envelope_typePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case first_party_request = "first_party_request"
+            }
+            /// Envelope type of the request being answered.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1/request_envelope_type`.
+            public var request_envelope_type: Components.Schemas.MailboxFirstPartyPrivilegedActionDecisionBindingV1.request_envelope_typePayload
+            /// First-party request id copied from the request payload.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1/request_id`.
+            public var request_id: Swift.String
+            /// Canonical decision binding schema version.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1/version`.
+            @frozen public enum versionPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case first_hyphen_party_hyphen_privileged_hyphen_action_hyphen_decision_hyphen_binding_sol_v1 = "first-party-privileged-action-decision-binding/v1"
+            }
+            /// Canonical decision binding schema version.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1/version`.
+            public var version: Components.Schemas.MailboxFirstPartyPrivilegedActionDecisionBindingV1.versionPayload
+            /// Creates a new `MailboxFirstPartyPrivilegedActionDecisionBindingV1`.
+            ///
+            /// - Parameters:
+            ///   - action_type:
+            ///   - approving_device_id: Device id whose signing key created `approval_signature`.
+            ///   - approving_device_signing_key_jkt: Base64url SHA-256 thumbprint of the approving device signing key.
+            ///   - canonical_action_hash: Hash copied from the request payload.
+            ///   - decided_at: RFC 3339 UTC timestamp of the mobile decision.
+            ///   - decision:
+            ///   - expires_at: Request expiry copied from the request payload.
+            ///   - intent_id: Privileged-action intent id copied from the request payload.
+            ///   - nonce: Nonce copied from the request payload.
+            ///   - request_envelope_id: Envelope id of the first-party request being answered.
+            ///   - request_envelope_issued_at: Envelope `issued_at` timestamp of the request being answered.
+            ///   - request_envelope_type: Envelope type of the request being answered.
+            ///   - request_id: First-party request id copied from the request payload.
+            ///   - version: Canonical decision binding schema version.
+            public init(
+                action_type: Components.Schemas.MailboxFirstPartyPrivilegedActionType,
+                approving_device_id: Swift.String,
+                approving_device_signing_key_jkt: Swift.String,
+                canonical_action_hash: Swift.String,
+                decided_at: Swift.String,
+                decision: Components.Schemas.MailboxFirstPartyApprovalDecision,
+                expires_at: Swift.String,
+                intent_id: Swift.String,
+                nonce: Swift.String,
+                request_envelope_id: Swift.String,
+                request_envelope_issued_at: Swift.String,
+                request_envelope_type: Components.Schemas.MailboxFirstPartyPrivilegedActionDecisionBindingV1.request_envelope_typePayload,
+                request_id: Swift.String,
+                version: Components.Schemas.MailboxFirstPartyPrivilegedActionDecisionBindingV1.versionPayload
+            ) {
+                self.action_type = action_type
+                self.approving_device_id = approving_device_id
+                self.approving_device_signing_key_jkt = approving_device_signing_key_jkt
+                self.canonical_action_hash = canonical_action_hash
+                self.decided_at = decided_at
+                self.decision = decision
+                self.expires_at = expires_at
+                self.intent_id = intent_id
+                self.nonce = nonce
+                self.request_envelope_id = request_envelope_id
+                self.request_envelope_issued_at = request_envelope_issued_at
+                self.request_envelope_type = request_envelope_type
+                self.request_id = request_id
+                self.version = version
+            }
+            public enum CodingKeys: String, CodingKey {
+                case action_type
+                case approving_device_id
+                case approving_device_signing_key_jkt
+                case canonical_action_hash
+                case decided_at
+                case decision
+                case expires_at
+                case intent_id
+                case nonce
+                case request_envelope_id
+                case request_envelope_issued_at
+                case request_envelope_type
+                case request_id
+                case version
+            }
+            public init(from decoder: any Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.action_type = try container.decode(
+                    Components.Schemas.MailboxFirstPartyPrivilegedActionType.self,
+                    forKey: .action_type
+                )
+                self.approving_device_id = try container.decode(
+                    Swift.String.self,
+                    forKey: .approving_device_id
+                )
+                self.approving_device_signing_key_jkt = try container.decode(
+                    Swift.String.self,
+                    forKey: .approving_device_signing_key_jkt
+                )
+                self.canonical_action_hash = try container.decode(
+                    Swift.String.self,
+                    forKey: .canonical_action_hash
+                )
+                self.decided_at = try container.decode(
+                    Swift.String.self,
+                    forKey: .decided_at
+                )
+                self.decision = try container.decode(
+                    Components.Schemas.MailboxFirstPartyApprovalDecision.self,
+                    forKey: .decision
+                )
+                self.expires_at = try container.decode(
+                    Swift.String.self,
+                    forKey: .expires_at
+                )
+                self.intent_id = try container.decode(
+                    Swift.String.self,
+                    forKey: .intent_id
+                )
+                self.nonce = try container.decode(
+                    Swift.String.self,
+                    forKey: .nonce
+                )
+                self.request_envelope_id = try container.decode(
+                    Swift.String.self,
+                    forKey: .request_envelope_id
+                )
+                self.request_envelope_issued_at = try container.decode(
+                    Swift.String.self,
+                    forKey: .request_envelope_issued_at
+                )
+                self.request_envelope_type = try container.decode(
+                    Components.Schemas.MailboxFirstPartyPrivilegedActionDecisionBindingV1.request_envelope_typePayload.self,
+                    forKey: .request_envelope_type
+                )
+                self.request_id = try container.decode(
+                    Swift.String.self,
+                    forKey: .request_id
+                )
+                self.version = try container.decode(
+                    Components.Schemas.MailboxFirstPartyPrivilegedActionDecisionBindingV1.versionPayload.self,
+                    forKey: .version
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "action_type",
+                    "approving_device_id",
+                    "approving_device_signing_key_jkt",
+                    "canonical_action_hash",
+                    "decided_at",
+                    "decision",
+                    "expires_at",
+                    "intent_id",
+                    "nonce",
+                    "request_envelope_id",
+                    "request_envelope_issued_at",
+                    "request_envelope_type",
+                    "request_id",
+                    "version"
+                ])
+            }
+        }
+        /// Response payload for the `first_party_response` envelope type. The response carries the mobile decision, the exact canonical bytes signed by the approving device, and the raw device signature over those bytes.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyResponsePayloadV1`.
+        public struct MailboxFirstPartyResponsePayloadV1: Codable, Hashable, Sendable {
+            /// RFC 4648 standard base64 with `=` padding for the canonical `MailboxFirstPartyPrivilegedActionDecisionBindingV1` UTF-8 JSON bytes.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyResponsePayloadV1/approval_binding_bytes`.
+            public var approval_binding_bytes: OpenAPIRuntime.Base64EncodedData
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyResponsePayloadV1/approval_binding_format`.
+            public var approval_binding_format: Components.Schemas.MailboxFirstPartyApprovalBindingFormat
+            /// RFC 4648 standard base64 with `=` padding for the raw signature over `approval_binding_bytes` after base64 decoding.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyResponsePayloadV1/approval_signature`.
+            public var approval_signature: OpenAPIRuntime.Base64EncodedData
+            /// Device signing-key algorithm identifier.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyResponsePayloadV1/approval_signature_algorithm`.
+            public var approval_signature_algorithm: Swift.String
+            /// Device id whose signing key created `approval_signature`.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyResponsePayloadV1/approving_device_id`.
+            public var approving_device_id: Swift.String
+            /// Base64url SHA-256 thumbprint of the approving device signing key.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyResponsePayloadV1/approving_device_signing_key_jkt`.
+            public var approving_device_signing_key_jkt: Swift.String
+            /// RFC 3339 UTC timestamp of the mobile decision.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyResponsePayloadV1/decided_at`.
+            public var decided_at: Swift.String
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyResponsePayloadV1/decision`.
+            public var decision: Components.Schemas.MailboxFirstPartyApprovalDecision
+            /// Privileged-action intent id copied from the request payload.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyResponsePayloadV1/intent_id`.
+            public var intent_id: Swift.String
+            /// Envelope id of the first-party request being answered.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyResponsePayloadV1/request_envelope_id`.
+            public var request_envelope_id: Swift.String
+            /// First-party request id copied from the request payload.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyResponsePayloadV1/request_id`.
+            public var request_id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/MailboxFirstPartyResponsePayloadV1/status`.
+            public var status: Components.Schemas.MailboxFirstPartyResponseStatus
+            /// Creates a new `MailboxFirstPartyResponsePayloadV1`.
+            ///
+            /// - Parameters:
+            ///   - approval_binding_bytes: RFC 4648 standard base64 with `=` padding for the canonical `MailboxFirstPartyPrivilegedActionDecisionBindingV1` UTF-8 JSON bytes.
+            ///   - approval_binding_format:
+            ///   - approval_signature: RFC 4648 standard base64 with `=` padding for the raw signature over `approval_binding_bytes` after base64 decoding.
+            ///   - approval_signature_algorithm: Device signing-key algorithm identifier.
+            ///   - approving_device_id: Device id whose signing key created `approval_signature`.
+            ///   - approving_device_signing_key_jkt: Base64url SHA-256 thumbprint of the approving device signing key.
+            ///   - decided_at: RFC 3339 UTC timestamp of the mobile decision.
+            ///   - decision:
+            ///   - intent_id: Privileged-action intent id copied from the request payload.
+            ///   - request_envelope_id: Envelope id of the first-party request being answered.
+            ///   - request_id: First-party request id copied from the request payload.
+            ///   - status:
+            public init(
+                approval_binding_bytes: OpenAPIRuntime.Base64EncodedData,
+                approval_binding_format: Components.Schemas.MailboxFirstPartyApprovalBindingFormat,
+                approval_signature: OpenAPIRuntime.Base64EncodedData,
+                approval_signature_algorithm: Swift.String,
+                approving_device_id: Swift.String,
+                approving_device_signing_key_jkt: Swift.String,
+                decided_at: Swift.String,
+                decision: Components.Schemas.MailboxFirstPartyApprovalDecision,
+                intent_id: Swift.String,
+                request_envelope_id: Swift.String,
+                request_id: Swift.String,
+                status: Components.Schemas.MailboxFirstPartyResponseStatus
+            ) {
+                self.approval_binding_bytes = approval_binding_bytes
+                self.approval_binding_format = approval_binding_format
+                self.approval_signature = approval_signature
+                self.approval_signature_algorithm = approval_signature_algorithm
+                self.approving_device_id = approving_device_id
+                self.approving_device_signing_key_jkt = approving_device_signing_key_jkt
+                self.decided_at = decided_at
+                self.decision = decision
+                self.intent_id = intent_id
+                self.request_envelope_id = request_envelope_id
+                self.request_id = request_id
+                self.status = status
+            }
+            public enum CodingKeys: String, CodingKey {
+                case approval_binding_bytes
+                case approval_binding_format
+                case approval_signature
+                case approval_signature_algorithm
+                case approving_device_id
+                case approving_device_signing_key_jkt
+                case decided_at
+                case decision
+                case intent_id
+                case request_envelope_id
+                case request_id
+                case status
+            }
+            public init(from decoder: any Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                self.approval_binding_bytes = try container.decode(
+                    OpenAPIRuntime.Base64EncodedData.self,
+                    forKey: .approval_binding_bytes
+                )
+                self.approval_binding_format = try container.decode(
+                    Components.Schemas.MailboxFirstPartyApprovalBindingFormat.self,
+                    forKey: .approval_binding_format
+                )
+                self.approval_signature = try container.decode(
+                    OpenAPIRuntime.Base64EncodedData.self,
+                    forKey: .approval_signature
+                )
+                self.approval_signature_algorithm = try container.decode(
+                    Swift.String.self,
+                    forKey: .approval_signature_algorithm
+                )
+                self.approving_device_id = try container.decode(
+                    Swift.String.self,
+                    forKey: .approving_device_id
+                )
+                self.approving_device_signing_key_jkt = try container.decode(
+                    Swift.String.self,
+                    forKey: .approving_device_signing_key_jkt
+                )
+                self.decided_at = try container.decode(
+                    Swift.String.self,
+                    forKey: .decided_at
+                )
+                self.decision = try container.decode(
+                    Components.Schemas.MailboxFirstPartyApprovalDecision.self,
+                    forKey: .decision
+                )
+                self.intent_id = try container.decode(
+                    Swift.String.self,
+                    forKey: .intent_id
+                )
+                self.request_envelope_id = try container.decode(
+                    Swift.String.self,
+                    forKey: .request_envelope_id
+                )
+                self.request_id = try container.decode(
+                    Swift.String.self,
+                    forKey: .request_id
+                )
+                self.status = try container.decode(
+                    Components.Schemas.MailboxFirstPartyResponseStatus.self,
+                    forKey: .status
+                )
+                try decoder.ensureNoAdditionalProperties(knownKeys: [
+                    "approval_binding_bytes",
+                    "approval_binding_format",
+                    "approval_signature",
+                    "approval_signature_algorithm",
+                    "approving_device_id",
+                    "approving_device_signing_key_jkt",
+                    "decided_at",
+                    "decision",
+                    "intent_id",
+                    "request_envelope_id",
+                    "request_id",
                     "status"
                 ])
             }

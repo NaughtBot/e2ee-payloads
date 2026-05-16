@@ -22,6 +22,8 @@ apis:
     root: ./payloads/pkcs11.yaml
   payloads-enroll:
     root: ./payloads/enroll.yaml
+  payloads-first-party:
+    root: ./payloads/first_party.yaml
 
 rules:
   # These specs declare no operations / paths — they exist purely to publish

@@ -43,7 +43,7 @@ export interface components {
          * @example ssh_sign
          * @enum {string}
          */
-        MailboxEnvelopeType: "link_request" | "link_approval" | "link_rejection" | "captcha_request" | "captcha_response" | "ssh_auth" | "ssh_sign" | "gpg_sign" | "gpg_decrypt" | "age_unwrap" | "pkcs11_sign" | "pkcs11_derive" | "enroll" | "browser_approval_request" | "browser_approval_response";
+        MailboxEnvelopeType: "link_request" | "link_approval" | "link_rejection" | "captcha_request" | "captcha_response" | "ssh_auth" | "ssh_sign" | "gpg_sign" | "gpg_decrypt" | "age_unwrap" | "pkcs11_sign" | "pkcs11_derive" | "enroll" | "browser_approval_request" | "browser_approval_response" | "first_party_request" | "first_party_response";
         /**
          * ApprovalChallenge
          * @description Canonical Longfellow / attested-key-zk approval challenge. Producer sends this inside the request payload; the approver binds it into the approval proof returned in the response payload.
@@ -1030,6 +1030,374 @@ export interface components {
              */
             request_envelope_id: string;
             status: components["schemas"]["MailboxBrowserApprovalResponseStatus"];
+        };
+        /**
+         * MailboxFirstPartyRequestKind
+         * @description First-party request category delivered to a user's devices.
+         * @example privileged_action_approval
+         * @enum {string}
+         */
+        MailboxFirstPartyRequestKind: "privileged_action_approval";
+        /**
+         * MailboxFirstPartyPrivilegedActionType
+         * @description Privileged server-side action that requires mobile approval.
+         * @example relying_party.register
+         * @enum {string}
+         */
+        MailboxFirstPartyPrivilegedActionType: "relying_party.register" | "relying_party.rotate_secret" | "device.revoke_other";
+        /**
+         * MailboxFirstPartyApprovalDecision
+         * @description Mobile user's signed decision for a first-party request.
+         * @example approved
+         * @enum {string}
+         */
+        MailboxFirstPartyApprovalDecision: "approved" | "denied";
+        /**
+         * MailboxFirstPartyResponseStatus
+         * @description Response lifecycle status. The signed `decision` carries the approval outcome.
+         * @example decided
+         * @enum {string}
+         */
+        MailboxFirstPartyResponseStatus: "decided";
+        /**
+         * MailboxFirstPartyApprovalBindingFormat
+         * @description Canonical byte format signed by the approving device key.
+         * @example first-party-privileged-action-decision-binding/v1+json
+         * @enum {string}
+         */
+        MailboxFirstPartyApprovalBindingFormat: "first-party-privileged-action-decision-binding/v1+json";
+        /**
+         * MailboxFirstPartyRelyingPartyRegisterActionV1
+         * @description Canonical action details for `relying_party.register`. Mobile displays these exact fields before approving creation of the relying party and its paired public/confidential clients.
+         */
+        MailboxFirstPartyRelyingPartyRegisterActionV1: {
+            /**
+             * @description Discriminator for this privileged action payload.
+             * @enum {string}
+             */
+            action_type: "relying_party.register";
+            /**
+             * @description Whether approval returns a one-time plaintext client secret to the initiating console flow.
+             * @example true
+             */
+            client_secret_returned_once: boolean;
+            /**
+             * @description OAuth resource audience requested for confidential client credentials.
+             * @example verify.api
+             */
+            confidential_client_audience: string;
+            /**
+             * @description Requested scopes for the confidential backend client.
+             * @example [
+             *       "verify:proof"
+             *     ]
+             */
+            confidential_client_scopes: string[];
+            /**
+             * @description Human-readable relying-party label shown to the user.
+             * @example Customer Portal
+             */
+            display_name: string;
+            /**
+             * Format: uri
+             * @description Browser origin that will host the public relying-party client.
+             * @example https://customer.example
+             */
+            origin: string;
+            /**
+             * @description Requested scopes for the public browser Sign in client.
+             * @example [
+             *       "openid",
+             *       "offline_access",
+             *       "mailbox:pairing:start"
+             *     ]
+             */
+            public_client_scopes: string[];
+            /**
+             * @description Exact browser callback URIs for the public authorization-code client.
+             * @example [
+             *       "https://customer.example/oauth/callback"
+             *     ]
+             */
+            redirect_uris: string[];
+        };
+        /**
+         * MailboxFirstPartyRelyingPartyRotateSecretActionV1
+         * @description Canonical action details for `relying_party.rotate_secret`. Approval authorizes replacing the confidential client's stored secret hash and returning the new secret once to the initiating console flow.
+         */
+        MailboxFirstPartyRelyingPartyRotateSecretActionV1: {
+            /**
+             * @description Discriminator for this privileged action payload.
+             * @enum {string}
+             */
+            action_type: "relying_party.rotate_secret";
+            /**
+             * @description Whether approval returns a one-time plaintext client secret to the initiating console flow.
+             * @example true
+             */
+            client_secret_returned_once: boolean;
+            /**
+             * @description Confidential backend client id whose secret will rotate.
+             * @example rp_conf_9d58fb4c6ff84f46
+             */
+            confidential_client_id: string;
+            /**
+             * @description Human-readable relying-party label shown to the user.
+             * @example Customer Portal
+             */
+            display_name: string;
+            /**
+             * Format: uri
+             * @description Browser origin attached to the relying party.
+             * @example https://customer.example
+             */
+            origin: string;
+            /**
+             * @description Relying-party record id whose confidential secret will rotate.
+             * @example rp_2af7b1fb2b5b4b5b8
+             */
+            relying_party_id: string;
+        };
+        /**
+         * MailboxFirstPartyDeviceRevokeOtherActionV1
+         * @description Canonical action details for `device.revoke_other`. Approval authorizes revoking another active device on the same user account.
+         */
+        MailboxFirstPartyDeviceRevokeOtherActionV1: {
+            /**
+             * @description Discriminator for this privileged action payload.
+             * @enum {string}
+             */
+            action_type: "device.revoke_other";
+            /**
+             * @description Whether approval cascades revocation to pairings involving the target device.
+             * @example true
+             */
+            revoke_pairings: boolean;
+            /**
+             * @description Whether approval revokes refresh-token families bound to the target device.
+             * @example true
+             */
+            revoke_refresh_tokens: boolean;
+            /**
+             * @description RFC 3339 UTC creation timestamp for the target device.
+             * @example 2026-05-01T12:00:00Z
+             */
+            target_device_created_at: string;
+            /**
+             * Format: uuid
+             * @description Device id that will be revoked.
+             * @example 22222222-3333-4444-8555-666666666666
+             */
+            target_device_id: string;
+            /**
+             * @description Optional human-readable device name shown to the user.
+             * @example Taylor's iPhone
+             */
+            target_device_name?: string | null;
+            /**
+             * @description Registered platform type for the target device.
+             * @example ios
+             * @enum {string}
+             */
+            target_device_type: "ios" | "android";
+        };
+        /**
+         * MailboxFirstPartyPrivilegedAction
+         * @description Typed canonical privileged action details shown on mobile.
+         */
+        MailboxFirstPartyPrivilegedAction: components["schemas"]["MailboxFirstPartyRelyingPartyRegisterActionV1"] | components["schemas"]["MailboxFirstPartyRelyingPartyRotateSecretActionV1"] | components["schemas"]["MailboxFirstPartyDeviceRevokeOtherActionV1"];
+        /**
+         * MailboxFirstPartyPrivilegedActionRequestV1
+         * @description Privileged console action approval request. `canonical_action_bytes` are the UTF-8 JSON bytes of the typed `action` object encoded with lexicographic property order and no insignificant whitespace; the hash pins the exact action details auth will execute after approval.
+         */
+        MailboxFirstPartyPrivilegedActionRequestV1: {
+            action: components["schemas"]["MailboxFirstPartyPrivilegedAction"];
+            action_type: components["schemas"]["MailboxFirstPartyPrivilegedActionType"];
+            /**
+             * Format: byte
+             * @description RFC 4648 standard base64 with `=` padding for the canonical privileged action JSON bytes.
+             */
+            canonical_action_bytes: string;
+            /**
+             * @description SHA-256 hash of `canonical_action_bytes` after base64 decoding.
+             * @example sha256:70f1e52bd01429bc2f405b182a3abc72751bda213dba41684a12db5116698c3c
+             */
+            canonical_action_hash: string;
+            /**
+             * @description RFC 3339 UTC timestamp when auth created the privileged-action intent.
+             * @example 2026-05-16T20:40:00Z
+             */
+            created_at: string;
+            /**
+             * @description OAuth client id for the console flow that initiated the intent.
+             * @example naughtbot-console
+             */
+            initiating_client_id: string;
+            /**
+             * @description Base64url SHA-256 thumbprint of the initiating browser DPoP key.
+             * @example 2oNQXcW2Upi5b1xHZQW1Yf3N0aYVnX_Jf7mRiS7Jm8A
+             */
+            initiating_dpop_jkt: string;
+            /**
+             * @description Opaque privileged-action intent id.
+             * @example pai_2af7b1fb2b5b4b5b8
+             */
+            intent_id: string;
+        };
+        /**
+         * MailboxFirstPartyRequestPayloadV1
+         * @description Request payload for the `first_party_request` envelope type.
+         */
+        MailboxFirstPartyRequestPayloadV1: {
+            /**
+             * @description RFC 3339 UTC timestamp after which the request is invalid.
+             * @example 2026-05-16T20:45:00Z
+             */
+            expires_at: string;
+            /**
+             * @description RFC 3339 UTC timestamp with canonical `Z` suffix.
+             * @example 2026-05-16T20:40:00Z
+             */
+            issued_at: string;
+            /**
+             * @description Opaque nonce bound into the mobile-signed decision.
+             * @example first-party-nonce-fixture
+             */
+            nonce: string;
+            privileged_action: components["schemas"]["MailboxFirstPartyPrivilegedActionRequestV1"];
+            /**
+             * @description Opaque auth/mailbox-scoped first-party request id.
+             * @example fpr_2af7b1fb2b5b4b5b8
+             */
+            request_id: string;
+            request_kind: components["schemas"]["MailboxFirstPartyRequestKind"];
+        };
+        /**
+         * MailboxFirstPartyPrivilegedActionDecisionBindingV1
+         * @description Canonical JSON object whose UTF-8 bytes are signed by the approving device key. Producers encode these fields in lexicographic property order with no insignificant whitespace and place the resulting bytes in `MailboxFirstPartyResponsePayloadV1.approval_binding_bytes`.
+         */
+        MailboxFirstPartyPrivilegedActionDecisionBindingV1: {
+            action_type: components["schemas"]["MailboxFirstPartyPrivilegedActionType"];
+            /**
+             * Format: uuid
+             * @description Device id whose signing key created `approval_signature`.
+             * @example 33333333-4444-4555-8666-777777777777
+             */
+            approving_device_id: string;
+            /**
+             * @description Base64url SHA-256 thumbprint of the approving device signing key.
+             * @example uJx87scLEhI5vT1YdtXx5ERw2IW0aP2mMNJ1lUu1Dx4
+             */
+            approving_device_signing_key_jkt: string;
+            /**
+             * @description Hash copied from the request payload.
+             * @example sha256:70f1e52bd01429bc2f405b182a3abc72751bda213dba41684a12db5116698c3c
+             */
+            canonical_action_hash: string;
+            /**
+             * @description RFC 3339 UTC timestamp of the mobile decision.
+             * @example 2026-05-16T20:41:00Z
+             */
+            decided_at: string;
+            decision: components["schemas"]["MailboxFirstPartyApprovalDecision"];
+            /**
+             * @description Request expiry copied from the request payload.
+             * @example 2026-05-16T20:45:00Z
+             */
+            expires_at: string;
+            /**
+             * @description Privileged-action intent id copied from the request payload.
+             * @example pai_2af7b1fb2b5b4b5b8
+             */
+            intent_id: string;
+            /**
+             * @description Nonce copied from the request payload.
+             * @example first-party-nonce-fixture
+             */
+            nonce: string;
+            /**
+             * Format: uuid
+             * @description Envelope id of the first-party request being answered.
+             * @example 11111111-2222-4333-8444-555555555555
+             */
+            request_envelope_id: string;
+            /**
+             * @description Envelope `issued_at` timestamp of the request being answered.
+             * @example 2026-05-16T20:40:00Z
+             */
+            request_envelope_issued_at: string;
+            /**
+             * @description Envelope type of the request being answered.
+             * @example first_party_request
+             * @enum {string}
+             */
+            request_envelope_type: "first_party_request";
+            /**
+             * @description First-party request id copied from the request payload.
+             * @example fpr_2af7b1fb2b5b4b5b8
+             */
+            request_id: string;
+            /**
+             * @description Canonical decision binding schema version.
+             * @enum {string}
+             */
+            version: "first-party-privileged-action-decision-binding/v1";
+        };
+        /**
+         * MailboxFirstPartyResponsePayloadV1
+         * @description Response payload for the `first_party_response` envelope type. The response carries the mobile decision, the exact canonical bytes signed by the approving device, and the raw device signature over those bytes.
+         */
+        MailboxFirstPartyResponsePayloadV1: {
+            /**
+             * Format: byte
+             * @description RFC 4648 standard base64 with `=` padding for the canonical `MailboxFirstPartyPrivilegedActionDecisionBindingV1` UTF-8 JSON bytes.
+             */
+            approval_binding_bytes: string;
+            approval_binding_format: components["schemas"]["MailboxFirstPartyApprovalBindingFormat"];
+            /**
+             * Format: byte
+             * @description RFC 4648 standard base64 with `=` padding for the raw signature over `approval_binding_bytes` after base64 decoding.
+             */
+            approval_signature: string;
+            /**
+             * @description Device signing-key algorithm identifier.
+             * @example ES256
+             */
+            approval_signature_algorithm: string;
+            /**
+             * Format: uuid
+             * @description Device id whose signing key created `approval_signature`.
+             * @example 33333333-4444-4555-8666-777777777777
+             */
+            approving_device_id: string;
+            /**
+             * @description Base64url SHA-256 thumbprint of the approving device signing key.
+             * @example uJx87scLEhI5vT1YdtXx5ERw2IW0aP2mMNJ1lUu1Dx4
+             */
+            approving_device_signing_key_jkt: string;
+            /**
+             * @description RFC 3339 UTC timestamp of the mobile decision.
+             * @example 2026-05-16T20:41:00Z
+             */
+            decided_at: string;
+            decision: components["schemas"]["MailboxFirstPartyApprovalDecision"];
+            /**
+             * @description Privileged-action intent id copied from the request payload.
+             * @example pai_2af7b1fb2b5b4b5b8
+             */
+            intent_id: string;
+            /**
+             * Format: uuid
+             * @description Envelope id of the first-party request being answered.
+             * @example 11111111-2222-4333-8444-555555555555
+             */
+            request_envelope_id: string;
+            /**
+             * @description First-party request id copied from the request payload.
+             * @example fpr_2af7b1fb2b5b4b5b8
+             */
+            request_id: string;
+            status: components["schemas"]["MailboxFirstPartyResponseStatus"];
         };
     };
     responses: never;

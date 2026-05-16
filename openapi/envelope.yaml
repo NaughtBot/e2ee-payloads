@@ -119,4 +119,6 @@ components:
         - enroll
         - browser_approval_request
         - browser_approval_response
+        - first_party_request
+        - first_party_response
       example: ssh_sign

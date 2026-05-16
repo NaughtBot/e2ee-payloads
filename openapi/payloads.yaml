@@ -136,3 +136,31 @@ components:
       $ref: 'payloads/browser_approval.yaml#/components/schemas/MailboxBrowserApprovalDecisionBindingV1'
     MailboxBrowserApprovalResponsePayloadV1:
       $ref: 'payloads/browser_approval.yaml#/components/schemas/MailboxBrowserApprovalResponsePayloadV1'
+
+    # ---- payloads/first_party.yaml ---------------------------------------
+    MailboxFirstPartyRequestKind:
+      $ref: 'payloads/first_party.yaml#/components/schemas/MailboxFirstPartyRequestKind'
+    MailboxFirstPartyPrivilegedActionType:
+      $ref: 'payloads/first_party.yaml#/components/schemas/MailboxFirstPartyPrivilegedActionType'
+    MailboxFirstPartyApprovalDecision:
+      $ref: 'payloads/first_party.yaml#/components/schemas/MailboxFirstPartyApprovalDecision'
+    MailboxFirstPartyResponseStatus:
+      $ref: 'payloads/first_party.yaml#/components/schemas/MailboxFirstPartyResponseStatus'
+    MailboxFirstPartyApprovalBindingFormat:
+      $ref: 'payloads/first_party.yaml#/components/schemas/MailboxFirstPartyApprovalBindingFormat'
+    MailboxFirstPartyRelyingPartyRegisterActionV1:
+      $ref: 'payloads/first_party.yaml#/components/schemas/MailboxFirstPartyRelyingPartyRegisterActionV1'
+    MailboxFirstPartyRelyingPartyRotateSecretActionV1:
+      $ref: 'payloads/first_party.yaml#/components/schemas/MailboxFirstPartyRelyingPartyRotateSecretActionV1'
+    MailboxFirstPartyDeviceRevokeOtherActionV1:
+      $ref: 'payloads/first_party.yaml#/components/schemas/MailboxFirstPartyDeviceRevokeOtherActionV1'
+    MailboxFirstPartyPrivilegedAction:
+      $ref: 'payloads/first_party.yaml#/components/schemas/MailboxFirstPartyPrivilegedAction'
+    MailboxFirstPartyPrivilegedActionRequestV1:
+      $ref: 'payloads/first_party.yaml#/components/schemas/MailboxFirstPartyPrivilegedActionRequestV1'
+    MailboxFirstPartyRequestPayloadV1:
+      $ref: 'payloads/first_party.yaml#/components/schemas/MailboxFirstPartyRequestPayloadV1'
+    MailboxFirstPartyPrivilegedActionDecisionBindingV1:
+      $ref: 'payloads/first_party.yaml#/components/schemas/MailboxFirstPartyPrivilegedActionDecisionBindingV1'
+    MailboxFirstPartyResponsePayloadV1:
+      $ref: 'payloads/first_party.yaml#/components/schemas/MailboxFirstPartyResponsePayloadV1'
